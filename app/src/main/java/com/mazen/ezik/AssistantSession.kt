@@ -27,7 +27,7 @@ class AssistantSession(context: Context) : VoiceInteractionSession(context) {
             val command = input.text.toString().trim()
             if (command.isNotEmpty()) {
                 // TODO (الخطوة الجاية): ابعت "command" لموديل الـ AI بدل الـ Toast دي
-                Toast.makeText(context, "استلمت الأمر: $command", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Received command: $command", Toast.LENGTH_SHORT).show()
                 hide()
             }
         }
