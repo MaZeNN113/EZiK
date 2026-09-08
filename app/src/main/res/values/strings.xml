@@ -1,8 +1,9 @@
 <resources>
-    <string name="app_name">Mazen Assistant</string>
-    <string name="btn_make_default">خليني المساعد الافتراضي</string>
-    <string name="status_is_assistant">✅ أنت دلوقتي المساعد الافتراضي</string>
-    <string name="status_not_assistant">❌ لسه مش المساعد الافتراضي — دوس الزرار تحت</string>
-    <string name="hint_command">اكتب أمرك هنا...</string>
-    <string name="btn_send">إرسال</string>
+    <string name="app_name">EZiK</string>
+    <string name="btn_make_default">Make me the default assistant</string>
+    <string name="status_is_assistant">✅ You are currently the default assistant</string>
+    <string name="status_not_assistant">❌ Not the default assistant yet — tap the button below</string>
+    <string name="status_unsupported_version">This device needs Android 10 (Q) or higher</string>
+    <string name="hint_command">Type your command here…</string>
+    <string name="btn_send">Send</string>
 </resources>
