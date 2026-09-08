@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Mazen Assistant</string>
+    <string name="btn_make_default">خليني المساعد الافتراضي</string>
+    <string name="status_is_assistant">✅ أنت دلوقتي المساعد الافتراضي</string>
+    <string name="status_not_assistant">❌ لسه مش المساعد الافتراضي — دوس الزرار تحت</string>
+    <string name="hint_command">اكتب أمرك هنا...</string>
+    <string name="btn_send">إرسال</string>
+</resources>
