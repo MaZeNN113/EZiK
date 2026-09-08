@@ -1,9 +1,21 @@
 <resources>
     <string name="app_name">EZiK</string>
-    <string name="btn_make_default">Make me the default assistant</string>
-    <string name="status_is_assistant">✅ You are currently the default assistant</string>
-    <string name="status_not_assistant">❌ Not the default assistant yet — tap the button below</string>
-    <string name="status_unsupported_version">This device needs Android 10 (Q) or higher</string>
+    <string name="btn_make_default">Make EZiK the default assistant</string>
+    <string name="status_is_assistant">EZiK is the default assistant</string>
+    <string name="status_not_assistant">EZiK is not the default assistant yet</string>
+    <string name="status_unsupported_version">EZiK currently requires Android 12 or higher</string>
     <string name="hint_command">Type your command here…</string>
     <string name="btn_send">Send</string>
+    <string name="btn_voice_start">Speak</string>
+    <string name="btn_voice_stop">Stop</string>
+    <string name="voice_processing">Listening…</string>
+    <string name="voice_transcribing">Transcribing…</string>
+    <string name="voice_error">Voice command failed: %1$s</string>
+    <string name="groq_key_missing">Configure GROQ_API_KEY before using voice commands</string>
+    <string name="btn_request_shizuku">Connect Shizuku (optional)</string>
+    <string name="shizuku_status">Shizuku: %1$s</string>
+    <string name="shizuku_unavailable">not running</string>
+    <string name="shizuku_needs_permission">permission required</string>
+    <string name="shizuku_ready">ready</string>
+    <string name="shizuku_not_running">Start Shizuku first, then try again</string>
 </resources>

@@ -1,48 +1,50 @@
-# Mazen Assistant — الخطوة صفر + هيكل أولي من الخطوة الأولى
+# EZiK — Android 12+ personal assistant
 
-مشروع أندرويد بسيط بيسجل نفسه كـ "مساعد رقمي" (Digital Assistant) في النظام،
-وبيفتح نافذة كتابة صغيرة لما تسحب من زاوية الشاشة — زي Gemini بالظبط،
-بس دلوقتي بيعمل Toast بس بالنص اللي كتبته (المخ الحقيقي جاي في الخطوة الجاية).
+EZiK is registered as an Android `VoiceInteractionService`, so after the user grants the assistant role it can be invoked through the system assistant gesture (including the configured corner gesture on supported launchers/devices).
 
----
+## What is implemented in this revision
 
-## 1) رفع المشروع على GitHub (من التابلت، من غير أي كمبيوتر)
+- Package identity is now `com.vizmazen.EZiK`.
+- `VoiceInteractionService` and `VoiceInteractionSessionService` are registered with the required `BIND_VOICE_INTERACTION` permission.
+- The app requests the Android assistant role through `RoleManager`.
+- Android 12+ is the current minimum supported version (`minSdk 31`).
+- Shizuku is an optional bridge: EZiK detects whether Shizuku is running, requests its permission, and reports readiness. Accessibility remains an independent fallback.
+- Voice commands are recorded locally as m4a, transcribed through Groq's multilingual `whisper-large-v3-turbo`, and then passed to a typed command planner.
+- The planner currently supports app launch, web search, URL opening, and app search when the target app exposes Android's search intent.
+- The planner recognizes `EZiK`, `E-Zik`, `إيزيك`, `ايزيك`, `Hey EZiK`, and `يا إيزيك` at the beginning of a transcript. Saying only the name produces an acknowledgement instead of searching for an app.
 
-1. افتح github.com من كروم على التابلت وسجل دخول.
-2. اعمل Repository جديد (اسمه مثلاً `mazen-assistant`)، خليه **Public** (عشان GitHub Actions يبقى مجاني تماماً من غير حدود).
-3. من صفحة الـ repo الفاضية، دوس "uploading an existing file".
-4. افتح الـ zip اللي نزلته، فك الضغط عنه، واسحب **كل المحتويات** (الفولدرات والملفات) على صفحة الرفع دفعة واحدة — كروم في وضع سطح المكتب بيدعم سحب فولدر كامل.
-5. اعمل Commit.
+This is a command-prefix wake word, not an always-listening hotword. The system assistant gesture must first open EZiK and then the voice recording button records the command. A true background wake word requires a separate on-device hotword engine and a foreground microphone service, which is intentionally not enabled yet for privacy and battery reasons.
 
-## 2) تشغيل البناء
+## Groq configuration
 
-1. روح تاب **Actions** فوق في الـ repo.
-2. لو مبدأش لوحده، دوس على الـ workflow اسمه "Build APK" وبعدين "Run workflow".
-3. استنى دقيقتين-تلاتة (البناء بيحصل على سيرفرات GitHub، مش على جهازك).
-4. لما يخلص (علامة ✅ خضرا)، افتحه ونزل من تحت "Artifacts" ملف اسمه `mazen-assistant-debug`.
+For a local debug build, provide `GROQ_API_KEY` as a Gradle property or environment variable; do not commit it:
 
-## 3) التثبيت على الريدمي نوت 10
+```bash
+gradle assembleDebug -PGROQ_API_KEY=your_key_here
+```
 
-1. الملف اللي نزلته zip فيه الـ APK جواه — فك الضغط.
-2. لو أول مرة، فعّل "تثبيت من مصادر غير معروفة" لتطبيق كروم/مدير الملفات.
-3. دوس على `app-debug.apk` وثبّته.
+For GitHub Actions, add the key once under **Repository Settings → Secrets and variables → Actions → New repository secret**, name it `GROQ_API_KEY`, and keep the value private. The workflow reads that secret during the build; the key is not written to the repository.
 
-## 4) التجربة
+The current prototype injects the key into the debug build for testing. Before publishing, move transcription behind a small authenticated backend or use a short-lived token flow; a permanent Groq key embedded in any APK can be extracted.
 
-1. افتح تطبيق **Mazen Assistant** — هتلاقي زرار "خليني المساعد الافتراضي".
-2. دوسه — هيطلعلك dialog من النظام يسألك تأكيد (لأنك هتشيل Gemini من مكانه).
-3. بعد الموافقة، اسحب من زاوية الشاشة تحت-يمين (زي ما بتعمل مع Gemini بالظبط).
-4. المفروض تطلعلك نافذة صغيرة فيها مربع كتابة — اكتب أي حاجة ودوس إرسال.
-5. لو ظهرلك Toast بالنص اللي كتبته → **مبروك، الهيكل شغال بالكامل** 🎉
+Groq's official endpoint is `https://api.groq.com/openai/v1/audio/transcriptions`; the implementation uses the documented multipart `file`, `model`, `language`-agnostic multilingual transcription, `prompt`, `temperature`, and JSON response fields. See [Groq Speech to Text documentation](https://console.groq.com/docs/speech-to-text).
 
----
+## Important platform limitation
 
-## لو حصل خطأ في البناء (طبيعي جداً أول مرة)
+The system/launcher owns the exact gesture mapping. EZiK can become the selected digital assistant and receive the system assistant invocation, but an app cannot force every OEM (especially Xiaomi/MIUI variants) to expose or map the gesture identically. The gesture must be enabled by the device's system settings.
 
-روح على Actions > الـ run اللي فشل (علامة ❌) > دوس عليه > هتلاقي تفاصيل الخطأ بالسطر.
-ابعتلي نص الخطأ وهنصلحه مع بعض.
+## Shizuku design note
 
-## الخطوة الجاية
+The current revision only establishes the permission/status bridge. A command planner and executor must be added next. Commands should be allow-listed and use Android intents first; Shizuku should be used only for operations that require elevated shell APIs. Do not execute arbitrary model-generated shell text directly.
 
-- ربط مربع الكتابة (وبعدين الصوت عن طريق **Groq Whisper API** للهجة المصرية) بموديل AI يرجع قرار بدل الـ Toast.
-- بعدها: التنفيذ الفعلي (Intents أولاً، Shizuku بعد كده للحالات الأعقد).
+## Build
+
+GitHub Actions builds the debug APK with Gradle 8.7. The local sandbox used for this revision did not include the `gradle` executable or Android SDK, so a local APK build could not be run here. The workflow remains the authoritative build check.
+
+## Next implementation phases
+
+1. Add a command planner that converts natural-language requests into typed, reviewable actions.
+2. Implement safe app launch/search actions using package visibility and Android intents.
+3. Add a Shizuku user-service executor for a small allow-listed set of actions.
+4. Keep Accessibility as an optional fallback and expose clear per-device setup instructions.
+5. Add instrumented tests on Android 12+ devices, including Xiaomi/MIUI behavior.
