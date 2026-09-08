@@ -20,6 +20,16 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".AssistActivity"
+            android:exported="true"
+            android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".AssistantInteractionService"
             android:permission="android.permission.BIND_VOICE_INTERACTION"

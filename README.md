@@ -14,6 +14,7 @@ EZiK is registered as an Android `VoiceInteractionService`, so after the user gr
 - The planner recognizes `EZiK`, `E-Zik`, `إيزيك`, `ايزيك`, `Hey EZiK`, and `يا إيزيك` at the beginning of a transcript. Saying only the name produces an acknowledgement instead of searching for an app.
 - The Shizuku provider artifact is included explicitly so Android can instantiate the declared provider without crashing at process startup.
 - The setup screen provides direct buttons for assistant settings, Accessibility settings, and EZiK app settings.
+- EZiK also declares the standard `android.intent.action.ASSIST` activity entry point because some Android/MIUI builds enumerate this path when building the assistant-role list.
 
 This is a command-prefix wake word, not an always-listening hotword. The system assistant gesture must first open EZiK and then the voice recording button records the command. A true background wake word requires a separate on-device hotword engine and a foreground microphone service, which is intentionally not enabled yet for privacy and battery reasons.
 
