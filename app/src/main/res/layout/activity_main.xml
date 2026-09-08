@@ -24,6 +24,15 @@
         android:backgroundTint="#6C5CE7"
         android:textColor="#FFFFFF" />
 
+    <Button
+        android:id="@+id/openAssistantSettingsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/btn_open_assistant_settings"
+        android:backgroundTint="#3A3A49"
+        android:textColor="#FFFFFF" />
+
     <TextView
         android:id="@+id/shizukuStatusText"
         android:layout_width="wrap_content"
@@ -38,6 +47,24 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="@string/btn_request_shizuku"
+        android:backgroundTint="#3A3A49"
+        android:textColor="#FFFFFF" />
+
+    <Button
+        android:id="@+id/openAccessibilitySettingsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/btn_open_accessibility_settings"
+        android:backgroundTint="#3A3A49"
+        android:textColor="#FFFFFF" />
+
+    <Button
+        android:id="@+id/openAppSettingsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/btn_open_app_settings"
         android:backgroundTint="#3A3A49"
         android:textColor="#FFFFFF" />
 

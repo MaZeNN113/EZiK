@@ -3,9 +3,11 @@ package com.vizmazen.EZiK
 import android.app.Activity
 import android.app.role.RoleManager
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
 
@@ -21,9 +23,18 @@ class MainActivity : Activity() {
         statusText = findViewById(R.id.statusText)
         shizukuStatusText = findViewById(R.id.shizukuStatusText)
         findViewById<Button>(R.id.makeDefaultButton).setOnClickListener { requestAssistantRole() }
+        findViewById<Button>(R.id.openAssistantSettingsButton).setOnClickListener {
+            openSettings(Settings.ACTION_VOICE_INPUT_SETTINGS)
+        }
         findViewById<Button>(R.id.requestShizukuButton).setOnClickListener {
             ShizukuManager.requestPermission(this)
             updateStatus()
+        }
+        findViewById<Button>(R.id.openAccessibilitySettingsButton).setOnClickListener {
+            openSettings(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+        }
+        findViewById<Button>(R.id.openAppSettingsButton).setOnClickListener {
+            openSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$packageName")
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
             checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -57,6 +68,16 @@ class MainActivity : Activity() {
                 val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT)
                 startActivityForResult(intent, REQUEST_CODE_ASSISTANT_ROLE)
             }
+        }
+    }
+
+    private fun openSettings(action: String, data: String? = null) {
+        runCatching {
+            startActivity(Intent(action).apply {
+                if (data != null) setData(android.net.Uri.parse(data))
+            })
+        }.onFailure {
+            startActivity(Intent(Settings.ACTION_SETTINGS))
         }
     }
 
