@@ -1,1 +1,11 @@
-
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ده الملف اللي بيقول لأندرويد "أنا مؤهل أكون Digital Assistant App".
+    supportsAssist=true هو اللي بيخلي تطبيقنا يظهر في:
+    Settings > Apps > Default apps > Digital assistant app
+    وهو اللي بيخليه يستقبل الـ assist gesture (السحب من الزاوية).
+-->
+<voice-interaction-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sessionService="com.vizmazen.assistant.AssistantSessionService"
+    android:supportsAssist="true" />
