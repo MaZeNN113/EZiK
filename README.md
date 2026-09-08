@@ -13,6 +13,7 @@ EZiK is registered as an Android `VoiceInteractionService`, so after the user gr
 - The planner currently supports app launch, web search, URL opening, and app search when the target app exposes Android's search intent.
 - The planner recognizes `EZiK`, `E-Zik`, `إيزيك`, `ايزيك`, `Hey EZiK`, and `يا إيزيك` at the beginning of a transcript. Saying only the name produces an acknowledgement instead of searching for an app.
 - The Shizuku provider artifact is included explicitly so Android can instantiate the declared provider without crashing at process startup.
+- The provider is explicitly exported because ShizukuProvider validates `android:exported=true` during provider attachment; the previous value caused startup crashes on Android 12+.
 - The setup screen provides direct buttons for assistant settings, Accessibility settings, and EZiK app settings.
 - EZiK also declares the standard `android.intent.action.ASSIST` activity entry point because some Android/MIUI builds enumerate this path when building the assistant-role list.
 - On Xiaomi/MIUI builds that invoke `ACTION_ASSIST` directly, the fallback now opens EZiK's real activity instead of finishing immediately.
