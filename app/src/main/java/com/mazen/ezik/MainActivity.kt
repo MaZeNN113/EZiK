@@ -38,7 +38,7 @@ class MainActivity : Activity() {
                 getString(R.string.status_not_assistant)
             }
         } else {
-            statusText.text = "الجهاز محتاج أندرويد 10 (Q) على الأقل"
+            statusText.text = getString(R.string.status_unsupported_version)
         }
     }
 
