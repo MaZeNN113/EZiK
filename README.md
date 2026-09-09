@@ -10,6 +10,7 @@ EZiK is an Android 12+ voice assistant prototype using `VoiceInteractionService`
 - `ACTION_ASSIST` fallback renders the command surface directly on MIUI devices that do not open a normal voice session.
 - Voice recording stop failures are handled so short recordings do not crash the session.
 - Shizuku provider is packaged and declared with the exported mode required by Shizuku.
+- The launcher activity now contains the same command surface as the assistant session: text input, voice recording, and command execution. It is not limited to setup buttons.
 
 ## Build
 
@@ -32,7 +33,7 @@ Never commit the key. A debug APK contains the configured key and is for persona
 5. For the fallback action path, enable EZiK under **Accessibility settings**. This permission remains optional.
 6. If using Shizuku, install and start the Shizuku app first, then grant EZiK access from the Shizuku application list.
 
-The exact corner gesture is controlled by the device launcher and system settings. EZiK can receive the system assistant invocation once selected, but it cannot force Xiaomi/MIUI to map a gesture that the launcher does not expose.
+The exact corner gesture is controlled by the device launcher and system settings. EZiK can receive the system assistant invocation once selected, but it cannot force Xiaomi/MIUI to map a gesture that the launcher does not expose. The current wake-word recognition is command-prefix recognition after recording starts; it is not an always-listening background hotword. A true wake word requires an explicit foreground microphone service and a hotword engine, plus a persistent Android notification and device-specific battery settings. Shizuku permission does not bypass these Android microphone/privacy rules.
 
 ## Supported prototype actions
 

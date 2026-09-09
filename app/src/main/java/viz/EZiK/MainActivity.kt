@@ -1,8 +1,8 @@
 package viz.EZiK
 
+import android.Manifest
 import android.app.Activity
 import android.app.role.RoleManager
-import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -10,11 +10,12 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
+import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
-
     private lateinit var statusText: TextView
     private lateinit var shizukuStatusText: TextView
+    private val commandExecutor = Executors.newSingleThreadExecutor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,6 +23,13 @@ class MainActivity : Activity() {
 
         statusText = findViewById(R.id.statusText)
         shizukuStatusText = findViewById(R.id.shizukuStatusText)
+        CommandUiBinder.bind(
+            findViewById(R.id.commandPanel),
+            this,
+            commandExecutor,
+            onFinished = { }
+        )
+
         findViewById<Button>(R.id.makeDefaultButton).setOnClickListener { requestAssistantRole() }
         findViewById<Button>(R.id.openAssistantSettingsButton).setOnClickListener {
             openSettings(Settings.ACTION_VOICE_INPUT_SETTINGS)
@@ -36,6 +44,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.openAppSettingsButton).setOnClickListener {
             openSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$packageName")
         }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
             checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_CODE_RECORD_AUDIO)
@@ -45,6 +54,11 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         updateStatus()
+    }
+
+    override fun onDestroy() {
+        commandExecutor.shutdownNow()
+        super.onDestroy()
     }
 
     private fun updateStatus() {
@@ -65,8 +79,10 @@ class MainActivity : Activity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val roleManager = getSystemService(RoleManager::class.java)
             if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) {
-                val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT)
-                startActivityForResult(intent, REQUEST_CODE_ASSISTANT_ROLE)
+                startActivityForResult(
+                    roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT),
+                    REQUEST_CODE_ASSISTANT_ROLE
+                )
             }
         }
     }
@@ -82,11 +98,9 @@ class MainActivity : Activity() {
     }
 
     @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE_ASSISTANT_ROLE) {
-            updateStatus()
-        }
+        if (requestCode == REQUEST_CODE_ASSISTANT_ROLE) updateStatus()
     }
 
     companion object {
