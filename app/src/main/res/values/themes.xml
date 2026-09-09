@@ -10,7 +10,7 @@
         اللي بتفتح ACTION_ASSIST activity عادي بدل VoiceInteractionSession.
         من غيره كان هيفتح شاشة كاملة سودا بدل نافذة صغيرة عائمة.
     -->
-    <style name="Theme.MazenAssistant.Transparent" parent="Theme.AppCompat.Translucent.NoTitleBar">
+    <style name="Theme.MazenAssistant.Transparent" parent="Theme.AppCompat.Dialog">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
