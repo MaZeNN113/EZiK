@@ -1,4 +1,4 @@
-package com.vizmazen.EZiK
+package viz.EZiK
 
 import android.service.voice.VoiceInteractionService
 

@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.vizmazen.EZiK'
+    namespace 'viz.EZiK'
     compileSdk 34
 
     buildFeatures {
@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         def groqKey = project.findProperty('GROQ_API_KEY') ?: System.getenv('GROQ_API_KEY') ?: ''
-        applicationId 'com.vizmazen.EZiK'
+        applicationId 'viz.EZiK'
         minSdk 31
         targetSdk 34
         versionCode 5

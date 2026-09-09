@@ -6,6 +6,6 @@
 -->
 <voice-interaction-service
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:sessionService="com.vizmazen.EZiK.AssistantSessionService"
-    android:recognitionService="com.vizmazen.EZiK.EZiKRecognitionService"
+    android:sessionService="viz.EZiK.AssistantSessionService"
+    android:recognitionService="viz.EZiK.EZiKRecognitionService"
     android:supportsAssist="true" />
