@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    ده الملف اللي بيقول لأندرويد "أنا مؤهل أكون Digital Assistant App".
-    supportsAssist=true هو اللي بيخلي تطبيقنا يظهر في:
-    Settings > Apps > Default apps > Digital assistant app
-    وهو اللي بيخليه يستقبل الـ assist gesture (السحب من الزاوية).
+    supportsAssist=true + recognitionService (لازم يكون موجود عشان أندرويد يعتبرنا
+    "voice interaction service" مكتمل ويطلعنا في قايمة Digital assistant app —
+    من غيره أغلب الأجهزة (خصوصاً MIUI) بتستبعدنا من القايمة بصمت وتفضل تقول None).
 -->
 <voice-interaction-service
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:sessionService="com.vizmazen.EZiK.AssistantSessionService"
+    android:recognitionService="com.vizmazen.EZiK.EZiKRecognitionService"
     android:supportsAssist="true" />

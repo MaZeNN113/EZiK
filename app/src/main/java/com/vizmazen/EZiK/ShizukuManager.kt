@@ -12,7 +12,9 @@ import rikka.shizuku.Shizuku
 object ShizukuManager {
     private const val REQUEST_CODE = 4201
 
-    fun isAvailable(): Boolean = Shizuku.pingBinder()
+    // Shizuku.pingBinder() ممكن يرمي استثناء لو Shizuku مش متثبت خالص على الجهاز
+    // بدل ما يرجع false بس، فبنحوطها هنا.
+    fun isAvailable(): Boolean = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
 
     fun hasPermission(): Boolean = isAvailable() && Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
 

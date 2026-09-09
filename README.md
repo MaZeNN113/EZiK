@@ -1,55 +1,45 @@
-# EZiK — Android 12+ personal assistant
+# EZiK — Android personal assistant
 
-EZiK is registered as an Android `VoiceInteractionService`, so after the user grants the assistant role it can be invoked through the system assistant gesture (including the configured corner gesture on supported launchers/devices).
+EZiK is an Android 12+ voice assistant prototype using `VoiceInteractionService`, `VoiceInteractionSessionService`, Groq Whisper transcription, typed command planning, and optional Shizuku/Accessibility bridges.
 
-## What is implemented in this revision
+## Current release
 
-- Package identity is now `com.vizmazen.EZiK`.
-- `VoiceInteractionService` and `VoiceInteractionSessionService` are registered with the required `BIND_VOICE_INTERACTION` permission.
-- The app requests the Android assistant role through `RoleManager`.
-- Android 12+ is the current minimum supported version (`minSdk 31`).
-- Shizuku is an optional bridge: EZiK detects whether Shizuku is running, requests its permission, and reports readiness. Accessibility remains an independent fallback.
-- Voice commands are recorded locally as m4a, transcribed through Groq's multilingual `whisper-large-v3-turbo`, and then passed to a typed command planner.
-- The planner currently supports app launch, web search, URL opening, and app search when the target app exposes Android's search intent.
-- The planner recognizes `EZiK`, `E-Zik`, `إيزيك`, `ايزيك`, `Hey EZiK`, and `يا إيزيك` at the beginning of a transcript. Saying only the name produces an acknowledgement instead of searching for an app.
-- The Shizuku provider artifact is included explicitly so Android can instantiate the declared provider without crashing at process startup.
-- The provider is explicitly exported because ShizukuProvider validates `android:exported=true` during provider attachment; the previous value caused startup crashes on Android 12+.
-- The setup screen provides direct buttons for assistant settings, Accessibility settings, and EZiK app settings.
-- EZiK also declares the standard `android.intent.action.ASSIST` activity entry point because some Android/MIUI builds enumerate this path when building the assistant-role list.
-- On Xiaomi/MIUI builds that invoke `ACTION_ASSIST` directly, the fallback now opens EZiK's real activity instead of finishing immediately.
+- Application ID: `com.vizmazen.EZiK`
+- Version: `0.2.3` / versionCode `5`
+- Voice Interaction metadata includes a session service, recognition service, settings activity, and assist support.
+- `ACTION_ASSIST` fallback renders the command surface directly on MIUI devices that do not open a normal voice session.
+- Voice recording stop failures are handled so short recordings do not crash the session.
+- Shizuku provider is packaged and declared with the exported mode required by Shizuku.
 
-This is a command-prefix wake word, not an always-listening hotword. The system assistant gesture must first open EZiK and then the voice recording button records the command. A true background wake word requires a separate on-device hotword engine and a foreground microphone service, which is intentionally not enabled yet for privacy and battery reasons.
+## Build
 
-## Groq configuration
+GitHub Actions builds the debug APK. Add a repository secret named `GROQ_API_KEY` under **Settings → Secrets and variables → Actions**, then run the **Build APK** workflow on the feature branch. The workflow passes the secret only to Gradle during the build.
 
-For a local debug build, provide `GROQ_API_KEY` as a Gradle property or environment variable; do not commit it:
+For local builds:
 
 ```bash
 gradle assembleDebug -PGROQ_API_KEY=your_key_here
 ```
 
-For GitHub Actions, add the key once under **Repository Settings → Secrets and variables → Actions → New repository secret**, name it `GROQ_API_KEY`, and keep the value private. The workflow reads that secret during the build; the key is not written to the repository.
+Never commit the key. A debug APK contains the configured key and is for personal testing only. Before public distribution, move Groq calls behind an authenticated backend or short-lived token service.
 
-The current prototype injects the key into the debug build for testing. Before publishing, move transcription behind a small authenticated backend or use a short-lived token flow; a permanent Groq key embedded in any APK can be extracted.
+## Device setup
 
-Groq's official endpoint is `https://api.groq.com/openai/v1/audio/transcriptions`; the implementation uses the documented multipart `file`, `model`, `language`-agnostic multilingual transcription, `prompt`, `temperature`, and JSON response fields. See [Groq Speech to Text documentation](https://console.groq.com/docs/speech-to-text).
+1. Uninstall older EZiK builds if Android reports a package/version conflict.
+2. Install the new APK and open it from the launcher once.
+3. Grant microphone permission.
+4. Select EZiK under **Settings → Apps → Default apps → Digital assistant app**. On MIUI, use the in-app **Open assistant settings** button if needed.
+5. For the fallback action path, enable EZiK under **Accessibility settings**. This permission remains optional.
+6. If using Shizuku, install and start the Shizuku app first, then grant EZiK access from the Shizuku application list.
 
-## Important platform limitation
+The exact corner gesture is controlled by the device launcher and system settings. EZiK can receive the system assistant invocation once selected, but it cannot force Xiaomi/MIUI to map a gesture that the launcher does not expose.
 
-The system/launcher owns the exact gesture mapping. EZiK can become the selected digital assistant and receive the system assistant invocation, but an app cannot force every OEM (especially Xiaomi/MIUI variants) to expose or map the gesture identically. The gesture must be enabled by the device's system settings.
+## Supported prototype actions
 
-## Shizuku design note
+The planner recognizes EZiK wake-word prefixes such as `EZiK`, `Hey EZiK`, `إيزيك`, and `يا إيزيك`, then supports launching matching installed apps, web search, URL opening, and app search when the target app supports Android's `ACTION_SEARCH` intent. Saying only the name produces an acknowledgement.
 
-The current revision only establishes the permission/status bridge. A command planner and executor must be added next. Commands should be allow-listed and use Android intents first; Shizuku should be used only for operations that require elevated shell APIs. Do not execute arbitrary model-generated shell text directly.
+Groq transcription uses the official multilingual `whisper-large-v3-turbo` endpoint. The project also includes the shared command UI binder from the latest Claude update so the normal voice session and the MIUI assist fallback use the same recording/execution path.
 
-## Build
+## Safety note
 
-GitHub Actions builds the debug APK with Gradle 8.7. The local sandbox used for this revision did not include the `gradle` executable or Android SDK, so a local APK build could not be run here. The workflow remains the authoritative build check.
-
-## Next implementation phases
-
-1. Add a command planner that converts natural-language requests into typed, reviewable actions.
-2. Implement safe app launch/search actions using package visibility and Android intents.
-3. Add a Shizuku user-service executor for a small allow-listed set of actions.
-4. Keep Accessibility as an optional fallback and expose clear per-device setup instructions.
-5. Add instrumented tests on Android 12+ devices, including Xiaomi/MIUI behavior.
+Model output must be converted to allow-listed typed actions. Do not execute arbitrary model-generated shell commands. Shizuku and Accessibility should only be used for explicitly implemented, reviewable actions.
