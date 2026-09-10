@@ -23,7 +23,9 @@
         <activity
             android:name=".AssistActivity"
             android:exported="true"
-            android:noHistory="true">
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.MazenAssistant.Transparent">
             <intent-filter>
                 <action android:name="android.intent.action.ASSIST" />
                 <category android:name="android.intent.category.DEFAULT" />

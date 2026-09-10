@@ -17,7 +17,13 @@ class AssistActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.session_assistant)
         val root = findViewById<android.view.View>(android.R.id.content)
-        CommandUiBinder.bind(root, this, executor, onFinished = { finish() })
+        CommandUiBinder.bind(root, this, executor, onFinished = {
+            // finish() لوحده مش دايماً كافي هنا: نافذة الـ assist أحياناً بتفضل
+            // فوق التطبيق اللي فتحناه لحد ما تعمل back يدوي. moveTaskToBack
+            // بيجبر النافذة دي تنزل تحت فوراً بدل ما تستنى.
+            finish()
+            moveTaskToBack(true)
+        })
     }
 
     override fun onDestroy() {

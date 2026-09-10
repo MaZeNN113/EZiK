@@ -53,6 +53,6 @@ class GroqWhisperClient(
     companion object {
         private const val ENDPOINT = "https://api.groq.com/openai/v1/audio/transcriptions"
         private const val MODEL = "whisper-large-v3-turbo"
-        private const val PROMPT = "Egyptian Arabic and English phone assistant command. Preserve app names, book titles, URLs, and English words exactly."
+        private const val PROMPT = "EZiK voice assistant command, spoken in Egyptian Arabic or English. The assistant's name is EZiK (pronounced ee-zik), often said first like \"EZiK, open Goodreads\". Preserve app names, book titles, URLs, and English words exactly."
     }
 }

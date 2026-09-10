@@ -25,6 +25,9 @@ class VoiceRecorder(private val context: Context) {
         return file
     }
 
+    /** بيرجع مستوى الصوت الحالي (0 لو مفيش تسجيل شغال) — مستخدم لاكتشاف السكوت. */
+    fun currentAmplitude(): Int = try { recorder?.maxAmplitude ?: 0 } catch (_: Exception) { 0 }
+
     fun stop(): File? {
         val active = recorder ?: return null
         return try {

@@ -1,5 +1,34 @@
 # EZiK — Android personal assistant
 
+## Changelog v0.2.5 (Claude pass, on top of Manus's v0.2.4 "command-surface")
+
+Fixed 4 issues reported after real-device testing:
+
+1. **Voice required a manual "Stop" tap.** Added real silence detection (VAD):
+   `VoiceRecorder` now exposes `currentAmplitude()` (from `MediaRecorder.getMaxAmplitude()`),
+   and `CommandUiBinder` polls it every 150ms. After it detects real speech and then ~1.3s
+   of silence, it auto-stops and transcribes — same behavior as Gemini's mic button. A 20s
+   hard cap prevents runaway recording if detection ever fails.
+2. **Launched app stayed hidden behind the EZiK window until manual back-press.** Two fixes,
+   since the exact platform cause couldn't be confirmed without a live device: (a) the
+   `AssistActivity` manifest entry was missing its intended `Theme.MazenAssistant.Transparent`
+   theme entirely (was rendering as a full opaque screen, not a floating popup); (b) added
+   `moveTaskToBack(true)` right after `finish()` to force our window down regardless of any
+   assist-specific window layering. **Best-effort fix — please confirm this actually resolves it.**
+3. **"EZiK" mis-transcribed as "Isaac"** (and the garbled result then got treated as part of
+   the app name, hence "I couldn't find Isaac, open ..."). Fixed at the root: `CommandPlanner`
+   now retries parsing after stripping a leading "word," pattern if the first attempt finds no
+   valid action — handles "Isaac", future mis-hearings, and any similar filler word generically,
+   not just a hardcoded list. Also strengthened the Groq Whisper prompt to explicitly mention
+   "EZiK" as biasing context.
+4. **Any typo/extra space broke app matching.** Replaced the old exact-substring check with a
+   3-tier match in `findBestAppMatch`: exact label match → space-insensitive contains → closest
+   Levenshtein-distance match within a tolerance. "Good Reads", "goodreads ", "gudreads" etc.
+   should now all resolve to Goodreads.
+
+Calling, messaging, and other actions beyond "open app" / "search" are intentionally still out
+of scope for this pass — priority was making the core open-app flow actually reliable first.
+
 EZiK is an Android 12+ voice assistant prototype using `VoiceInteractionService`, `VoiceInteractionSessionService`, Groq Whisper transcription, typed command planning, and optional Shizuku/Accessibility bridges.
 
 ## Current release
