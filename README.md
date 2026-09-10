@@ -34,7 +34,7 @@ EZiK is an Android 12+ voice assistant prototype using `VoiceInteractionService`
 ## Current release
 
 - Application ID: `viz.EZiK`
-- Version: `0.2.7` / versionCode `9`
+- Version: `0.2.8` / versionCode `10`
 - Voice Interaction metadata includes a session service, recognition service, settings activity, and assist support.
 - `ACTION_ASSIST` fallback renders the command surface directly on MIUI devices that do not open a normal voice session.
 - Voice recording stop failures are handled so short recordings do not crash the session.
@@ -42,6 +42,7 @@ EZiK is an Android 12+ voice assistant prototype using `VoiceInteractionService`
 - The launcher activity now contains the same command surface as the assistant session: text input, voice recording, and command execution. It is not limited to setup buttons.
 - Voice recording uses device-tolerant amplitude thresholds, stops after detected speech followed by approximately 550 ms of silence, and has an eight-second safety limit. Google does not publish Gemini Android's private VAD value; its public Speech-to-Text guidance requires voice-activity timeouts greater than 500 ms, so this is an evidence-based approximation rather than a claim to reproduce Gemini's proprietary detector.
 - The MIUI `ACTION_ASSIST` fallback uses a transparent bottom-aligned compact window instead of a full-screen activity.
+- Assistant invocation starts voice capture automatically; the surface is modal, does not pass touches through to the underlying app, and closes when the user taps outside it.
 
 ## Build
 

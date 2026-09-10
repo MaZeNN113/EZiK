@@ -4,6 +4,7 @@ import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.Window
 import android.view.WindowManager
 import java.util.concurrent.Executors
@@ -19,6 +20,7 @@ class AssistActivity : Activity() {
         window.setBackgroundDrawableResource(android.R.color.transparent)
         window.setDimAmount(0.18f)
         window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL)
         window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
         window.setGravity(Gravity.BOTTOM)
         window.decorView.setBackgroundColor(Color.TRANSPARENT)
@@ -26,7 +28,7 @@ class AssistActivity : Activity() {
         val root = findViewById<android.view.View>(android.R.id.content)
         CommandUiBinder.bind(root, this, executor, onFinished = {
             finishAndRemoveTask()
-        })
+        }, autoStartVoice = true)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -35,6 +37,14 @@ class AssistActivity : Activity() {
             window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
             window.setGravity(Gravity.BOTTOM)
         }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.action == MotionEvent.ACTION_OUTSIDE) {
+            finishAndRemoveTask()
+            return true
+        }
+        return super.onTouchEvent(event)
     }
 
     override fun onDestroy() {

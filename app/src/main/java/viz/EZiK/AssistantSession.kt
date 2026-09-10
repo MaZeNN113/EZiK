@@ -20,17 +20,22 @@ class AssistantSession(context: Context) : VoiceInteractionSession(context) {
 
     override fun onCreateContentView(): View {
         val view = LayoutInflater.from(context).inflate(R.layout.session_assistant, null)
-        CommandUiBinder.bind(view, context, executor, onFinished = { hide() })
+        CommandUiBinder.bind(view, context, executor, onFinished = { hide() }, autoStartVoice = true)
         return view
     }
 
     override fun onCreate() {
         super.onCreate()
+        getWindow()?.let { dialog ->
+            dialog.setCanceledOnTouchOutside(true)
+            dialog.setCancelable(true)
+        }
         getWindow()?.window?.let { window ->
             window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             window.setGravity(Gravity.BOTTOM)
             window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
             window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL)
             window.attributes = window.attributes.apply { dimAmount = 0.18f }
         }
     }
