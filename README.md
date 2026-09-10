@@ -34,13 +34,13 @@ EZiK is an Android 12+ voice assistant prototype using `VoiceInteractionService`
 ## Current release
 
 - Application ID: `viz.EZiK`
-- Version: `0.2.6` / versionCode `8`
+- Version: `0.2.7` / versionCode `9`
 - Voice Interaction metadata includes a session service, recognition service, settings activity, and assist support.
 - `ACTION_ASSIST` fallback renders the command surface directly on MIUI devices that do not open a normal voice session.
 - Voice recording stop failures are handled so short recordings do not crash the session.
 - Shizuku provider is packaged and declared with the exported mode required by Shizuku.
 - The launcher activity now contains the same command surface as the assistant session: text input, voice recording, and command execution. It is not limited to setup buttons.
-- Voice recording uses device-tolerant amplitude thresholds, stops after detected speech followed by silence, and has a ten-second safety limit.
+- Voice recording uses device-tolerant amplitude thresholds, stops after detected speech followed by approximately 550 ms of silence, and has an eight-second safety limit. Google does not publish Gemini Android's private VAD value; its public Speech-to-Text guidance requires voice-activity timeouts greater than 500 ms, so this is an evidence-based approximation rather than a claim to reproduce Gemini's proprietary detector.
 - The MIUI `ACTION_ASSIST` fallback uses a transparent bottom-aligned compact window instead of a full-screen activity.
 
 ## Build
@@ -65,6 +65,8 @@ Never commit the key. A debug APK contains the configured key and is for persona
 6. If using Shizuku, install and start the Shizuku app first, then grant EZiK access from the Shizuku application list.
 
 The exact corner gesture is controlled by the device launcher and system settings. EZiK can receive the system assistant invocation once selected, but it cannot force Xiaomi/MIUI to map a gesture that the launcher does not expose. The current wake-word recognition is command-prefix recognition after recording starts; it is not an always-listening background hotword. A true wake word requires an explicit foreground microphone service and a hotword engine, plus a persistent Android notification and device-specific battery settings. Shizuku permission does not bypass these Android microphone/privacy rules.
+
+The VAD timeout guidance was checked against [Google Cloud Speech-to-Text voice activity events](https://docs.cloud.google.com/speech-to-text/docs/voice-activity-events), and the gesture UI is configured through the Android [VoiceInteractionSession window](https://developer.android.com/reference/android/service/voice/VoiceInteractionSession), not only the MIUI `ACTION_ASSIST` fallback activity.
 
 ## Supported prototype actions
 

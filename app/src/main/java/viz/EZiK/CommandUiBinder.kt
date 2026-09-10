@@ -13,11 +13,13 @@ import java.util.concurrent.ExecutorService
 object CommandUiBinder {
     // MediaRecorder.maxAmplitude is device-dependent; Xiaomi devices often
     // report speech well below 1600, so the previous thresholds never detected it.
-    private const val SILENCE_THRESHOLD = 180
-    private const val SPEECH_THRESHOLD = 450
-    private const val SILENCE_DURATION_MS = 850L
-    private const val POLL_INTERVAL_MS = 120L
-    private const val MAX_RECORDING_MS = 10_000L
+    private const val SILENCE_THRESHOLD = 120
+    private const val SPEECH_THRESHOLD = 250
+    // Google does not publish Gemini's private value; its public STT guidance
+    // requires end-of-speech timeouts above 500 ms. Use 550 ms here.
+    private const val SILENCE_DURATION_MS = 550L
+    private const val POLL_INTERVAL_MS = 80L
+    private const val MAX_RECORDING_MS = 8_000L
     private const val MIN_RECORDING_MS = 900L
 
     fun bind(view: View, context: Context, executor: ExecutorService, onFinished: () -> Unit) {
