@@ -4,4 +4,21 @@
         <item name="colorPrimary">#6C5CE7</item>
         <item name="colorAccent">#6C5CE7</item>
     </style>
+
+    <!--
+        ثيم شفاف للـ AssistActivity — بيستخدم على أجهزة (زي بعض إصدارات MIUI)
+        اللي بتفتح ACTION_ASSIST activity عادي بدل VoiceInteractionSession.
+        من غيره كان هيفتح شاشة كاملة سودا بدل نافذة صغيرة عائمة.
+    -->
+    <style name="Theme.MazenAssistant.Transparent" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
 </resources>

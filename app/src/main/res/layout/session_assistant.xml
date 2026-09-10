@@ -20,6 +20,15 @@
         android:autofillHints="" />
 
     <Button
+        android:id="@+id/voiceButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="@string/btn_voice_start"
+        android:backgroundTint="#3A3A49"
+        android:textColor="#FFFFFF" />
+
+    <Button
         android:id="@+id/sendButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
