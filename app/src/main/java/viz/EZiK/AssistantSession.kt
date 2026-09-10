@@ -26,7 +26,7 @@ class AssistantSession(context: Context) : VoiceInteractionSession(context) {
 
     override fun onCreate() {
         super.onCreate()
-        getWindow()?.let { window ->
+        getWindow()?.window?.let { window ->
             window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             window.setGravity(Gravity.BOTTOM)
             window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
