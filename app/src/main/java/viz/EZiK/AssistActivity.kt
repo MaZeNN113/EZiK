@@ -1,29 +1,40 @@
 package viz.EZiK
 
 import android.app.Activity
+import android.graphics.Color
 import android.os.Bundle
+import android.view.Gravity
+import android.view.Window
+import android.view.WindowManager
 import java.util.concurrent.Executors
 
-/**
- * بعض إصدارات MIUI بتفتح ACTION_ASSIST activity عادي بدل ما تستخدم
- * VoiceInteractionSession. عشان كده الشاشة دي بترسم نفس نافذة الأوامر
- * (session_assistant.xml) بدل ما تحول المستخدم لشاشة الإعدادات الكاملة.
- */
+/** Compact bottom assistant surface used by MIUI ACTION_ASSIST fallback. */
 class AssistActivity : Activity() {
-
     private val executor = Executors.newSingleThreadExecutor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
         setContentView(R.layout.session_assistant)
+        window.setBackgroundDrawableResource(android.R.color.transparent)
+        window.setDimAmount(0.18f)
+        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+        window.setGravity(Gravity.BOTTOM)
+        window.decorView.setBackgroundColor(Color.TRANSPARENT)
+
         val root = findViewById<android.view.View>(android.R.id.content)
         CommandUiBinder.bind(root, this, executor, onFinished = {
-            // finish() لوحده مش دايماً كافي هنا: نافذة الـ assist أحياناً بتفضل
-            // فوق التطبيق اللي فتحناه لحد ما تعمل back يدوي. moveTaskToBack
-            // بيجبر النافذة دي تنزل تحت فوراً بدل ما تستنى.
-            finish()
-            moveTaskToBack(true)
+            finishAndRemoveTask()
         })
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+            window.setGravity(Gravity.BOTTOM)
+        }
     }
 
     override fun onDestroy() {

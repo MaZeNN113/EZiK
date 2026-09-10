@@ -20,8 +20,8 @@ class GroqWhisperClient(
         val connection = (URL(ENDPOINT).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             doOutput = true
-            connectTimeout = 15_000
-            readTimeout = 45_000
+            connectTimeout = 8_000
+            readTimeout = 20_000
             setRequestProperty("Authorization", "Bearer $apiKey")
             setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
         }

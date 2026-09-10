@@ -34,12 +34,14 @@ EZiK is an Android 12+ voice assistant prototype using `VoiceInteractionService`
 ## Current release
 
 - Application ID: `viz.EZiK`
-- Version: `0.2.4` / versionCode `6`
+- Version: `0.2.6` / versionCode `8`
 - Voice Interaction metadata includes a session service, recognition service, settings activity, and assist support.
 - `ACTION_ASSIST` fallback renders the command surface directly on MIUI devices that do not open a normal voice session.
 - Voice recording stop failures are handled so short recordings do not crash the session.
 - Shizuku provider is packaged and declared with the exported mode required by Shizuku.
 - The launcher activity now contains the same command surface as the assistant session: text input, voice recording, and command execution. It is not limited to setup buttons.
+- Voice recording uses device-tolerant amplitude thresholds, stops after detected speech followed by silence, and has a ten-second safety limit.
+- The MIUI `ACTION_ASSIST` fallback uses a transparent bottom-aligned compact window instead of a full-screen activity.
 
 ## Build
 
