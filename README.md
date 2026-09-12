@@ -11,7 +11,7 @@ Fixed 4 issues reported after real-device testing:
    hard cap prevents runaway recording if detection ever fails.
 2. **Launched app stayed hidden behind the EZiK window until manual back-press.** Two fixes,
    since the exact platform cause couldn't be confirmed without a live device: (a) the
-   `AssistActivity` manifest entry was missing its intended `Theme.MazenAssistant.Transparent`
+   `AssistActivity` manifest entry was missing its intended `Theme.EZiK.Transparent`
    theme entirely (was rendering as a full opaque screen, not a floating popup); (b) added
    `moveTaskToBack(true)` right after `finish()` to force our window down regardless of any
    assist-specific window layering. **Best-effort fix — please confirm this actually resolves it.**
@@ -34,7 +34,7 @@ EZiK is an Android 12+ voice assistant prototype using `VoiceInteractionService`
 ## Current release
 
 - Application ID: `viz.EZiK`
-- Version: `0.2.8` / versionCode `10`
+- Version: `1.0.1` / versionCode `21`
 - Voice Interaction metadata includes a session service, recognition service, settings activity, and assist support.
 - `ACTION_ASSIST` fallback renders the command surface directly on MIUI devices that do not open a normal voice session.
 - Voice recording stop failures are handled so short recordings do not crash the session.
