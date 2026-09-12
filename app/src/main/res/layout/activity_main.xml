@@ -28,7 +28,7 @@
             android:layout_marginTop="14dp" android:background="@drawable/panel" android:orientation="vertical">
             <EditText android:id="@+id/commandInput" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:background="@android:color/transparent" android:hint="@string/hint_command"
-                android:hintTextColor="#747B8B" android:textColor="#F6F7FB" android:textSize="17sp"
+                android:textColorHint="#747B8B" android:textColor="#F6F7FB" android:textSize="17sp"
                 android:inputType="textCapSentences|textMultiLine" android:minLines="2"/>
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="10dp" android:gravity="center_vertical">
@@ -72,7 +72,7 @@
                 android:text="Voice setup" android:textColor="#F6F7FB" android:textSize="16sp" android:textStyle="bold"/>
             <EditText android:id="@+id/groqKeyInput" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="8dp" android:hint="@string/groq_key_hint" android:textColor="#F6F7FB"
-                android:hintTextColor="#747B8B" android:inputType="textPassword"/>
+                android:textColorHint="#747B8B" android:inputType="textPassword"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="6dp" android:text="@string/api_security_note"
                 android:textColor="#777F90" android:textSize="12sp"/>
