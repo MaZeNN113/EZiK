@@ -6,10 +6,11 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/Theme.MazenAssistant">
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EZiK">
 
         <activity
             android:name=".MainActivity"
@@ -25,7 +26,7 @@
             android:exported="true"
             android:noHistory="true"
             android:excludeFromRecents="true"
-            android:theme="@style/Theme.MazenAssistant.Transparent">
+            android:theme="@style/Theme.EZiK.Transparent">
             <intent-filter>
                 <action android:name="android.intent.action.ASSIST" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -51,6 +52,7 @@
 
         <service
             android:name=".EZiKRecognitionService"
+            android:permission="android.permission.BIND_SPEECH_RECOGNITION_SERVICE"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.speech.RecognitionService" />
@@ -78,7 +80,5 @@
             android:authorities="${applicationId}.shizuku"
             android:exported="true"
             android:multiprocess="false" />
-
     </application>
-
 </manifest>

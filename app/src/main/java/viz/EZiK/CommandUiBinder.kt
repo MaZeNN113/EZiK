@@ -6,17 +6,18 @@ import android.os.Looper
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import java.util.concurrent.ExecutorService
 
-/** Shared command UI for the launcher, assist activity, and voice session. */
+/** Shared command surface used by the launcher and both assistant entry paths. */
 object CommandUiBinder {
     private const val SILENCE_THRESHOLD = 120
     private const val SPEECH_THRESHOLD = 250
-    private const val SILENCE_DURATION_MS = 550L
+    private const val SILENCE_DURATION_MS = 700L
     private const val POLL_INTERVAL_MS = 80L
-    private const val MAX_RECORDING_MS = 8_000L
-    private const val MIN_RECORDING_MS = 900L
+    private const val MAX_RECORDING_MS = 12_000L
+    private const val MIN_RECORDING_MS = 700L
 
     fun bind(
         view: View,
@@ -25,102 +26,171 @@ object CommandUiBinder {
         onFinished: () -> Unit,
         autoStartVoice: Boolean = false
     ) {
-        val mainHandler = Handler(Looper.getMainLooper())
+        val handler = Handler(Looper.getMainLooper())
         val recorder = VoiceRecorder(context)
-        var isRecording = false
-        var recordingStartedAt = 0L
-        var hasDetectedSpeech = false
+        var recording = false
+        var processing = false
+        var startedAt = 0L
+        var heardSpeech = false
         var silenceStartedAt = 0L
-        var vadRunnable: Runnable? = null
+        var vad: Runnable? = null
 
         val input = view.findViewById<EditText>(R.id.commandInput)
-        val sendButton = view.findViewById<Button>(R.id.sendButton)
-        val voiceButton = view.findViewById<Button>(R.id.voiceButton)
+        val send = view.findViewById<Button>(R.id.sendButton)
+        val voice = view.findViewById<Button>(R.id.voiceButton)
+        val status = view.findViewById<TextView?>(R.id.sessionStatus)
+
+        fun setStatus(text: String) {
+            status?.text = text
+        }
+
+        fun finishSafely() {
+            if (!processing) return
+            processing = false
+            onFinished()
+        }
 
         fun executeCommand(command: String) {
-            if (command.isBlank()) return
+            val text = command.trim()
+            if (text.isBlank() || processing) return
+            processing = true
+            setStatus("Working…")
+            send.isEnabled = false
+            voice.isEnabled = false
+
             executor.execute {
-                val result = runCatching { ActionExecutor.execute(context, CommandPlanner.plan(command)) }
-                mainHandler.post {
-                    result.onSuccess { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
-                        .onFailure { error -> Toast.makeText(context, error.message ?: "Command failed", Toast.LENGTH_LONG).show() }
-                    onFinished()
+                val result = runCatching { ActionExecutor.execute(context, AssistantBrain.resolve(context, text).getOrThrow()) }
+                handler.post {
+                    send.isEnabled = true
+                    voice.isEnabled = true
+                    result.onSuccess {
+                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                    }.onFailure {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.action_failed, it.message ?: "unknown error"),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    finishSafely()
                 }
             }
         }
 
-        fun stopRecordingAndProcess() {
-            if (!isRecording) return
-            isRecording = false
-            vadRunnable?.let(mainHandler::removeCallbacks)
-            voiceButton.text = context.getString(R.string.btn_voice_start)
+        fun processRecording() {
+            if (!recording) return
+            recording = false
+            vad?.let(handler::removeCallbacks)
+            voice.text = context.getString(R.string.btn_voice_start)
+            setStatus("Transcribing…")
+
             val file = runCatching { recorder.stop() }.getOrNull()
-            if (file == null) {
-                Toast.makeText(context, context.getString(R.string.voice_error, "recording too short"), Toast.LENGTH_LONG).show()
+            if (file == null || !file.exists() || file.length() == 0L) {
+                setStatus("Ready")
+                Toast.makeText(context, "Recording was too short", Toast.LENGTH_SHORT).show()
                 return
             }
-            Toast.makeText(context, R.string.voice_transcribing, Toast.LENGTH_SHORT).show()
+
             executor.execute {
-                val transcript = GroqWhisperClient(context).transcribe(file)
+                val result = GroqWhisperClient(context).transcribe(file)
                 file.delete()
-                mainHandler.post {
-                    transcript.onSuccess { text ->
-                        input.setText(text)
-                        executeCommand(text)
+                handler.post {
+                    result.onSuccess { transcript ->
+                        input.setText(transcript)
+                        input.setSelection(input.text.length)
+                        executeCommand(transcript)
                     }.onFailure { error ->
-                        Toast.makeText(context, context.getString(R.string.voice_error, error.message ?: "transcription unavailable"), Toast.LENGTH_LONG).show()
+                        setStatus("Ready")
+                        val message = if (error.message?.contains("API key", true) == true) {
+                            context.getString(R.string.groq_key_missing)
+                        } else {
+                            error.message ?: "transcription unavailable"
+                        }
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.voice_error, message),
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             }
         }
 
         fun startRecording() {
-            if (isRecording) return
+            if (recording || processing) return
+            if (!SecureStore(context).hasApiKey()) {
+                Toast.makeText(context, R.string.groq_key_missing, Toast.LENGTH_LONG).show()
+                return
+            }
             try {
                 recorder.start()
-                isRecording = true
-                hasDetectedSpeech = false
+                recording = true
+                startedAt = System.currentTimeMillis()
+                heardSpeech = false
                 silenceStartedAt = 0L
-                recordingStartedAt = System.currentTimeMillis()
-                voiceButton.text = context.getString(R.string.btn_voice_stop)
-                Toast.makeText(context, R.string.voice_processing, Toast.LENGTH_SHORT).show()
-                vadRunnable = object : Runnable {
+                voice.text = context.getString(R.string.btn_voice_stop)
+                setStatus("Listening…")
+
+                vad = object : Runnable {
                     override fun run() {
-                        if (!isRecording) return
+                        if (!recording) return
                         val now = System.currentTimeMillis()
-                        val elapsed = now - recordingStartedAt
+                        val elapsed = now - startedAt
                         val amplitude = recorder.currentAmplitude()
-                        if (amplitude >= SPEECH_THRESHOLD) {
-                            hasDetectedSpeech = true
-                            silenceStartedAt = 0L
-                        } else if (amplitude < SILENCE_THRESHOLD && hasDetectedSpeech) {
-                            if (silenceStartedAt == 0L) silenceStartedAt = now
-                        } else if (amplitude >= SILENCE_THRESHOLD) {
-                            silenceStartedAt = 0L
+
+                        when {
+                            amplitude >= SPEECH_THRESHOLD -> {
+                                heardSpeech = true
+                                silenceStartedAt = 0L
+                            }
+                            heardSpeech && amplitude < SILENCE_THRESHOLD -> {
+                                if (silenceStartedAt == 0L) silenceStartedAt = now
+                            }
+                            else -> silenceStartedAt = 0L
                         }
-                        val silenceLongEnough = silenceStartedAt != 0L && now - silenceStartedAt >= SILENCE_DURATION_MS
-                        if ((elapsed >= MIN_RECORDING_MS && hasDetectedSpeech && silenceLongEnough) || elapsed >= MAX_RECORDING_MS) {
-                            stopRecordingAndProcess()
+
+                        val silenceComplete =
+                            silenceStartedAt != 0L && now - silenceStartedAt >= SILENCE_DURATION_MS
+
+                        if ((elapsed >= MIN_RECORDING_MS && heardSpeech && silenceComplete) ||
+                            elapsed >= MAX_RECORDING_MS) {
+                            processRecording()
                         } else {
-                            mainHandler.postDelayed(this, POLL_INTERVAL_MS)
+                            handler.postDelayed(this, POLL_INTERVAL_MS)
                         }
                     }
                 }
-                mainHandler.postDelayed(vadRunnable!!, POLL_INTERVAL_MS)
-            } catch (error: Exception) {
-                Toast.makeText(context, context.getString(R.string.voice_error, error.message ?: "microphone unavailable"), Toast.LENGTH_LONG).show()
+                handler.postDelayed(vad!!, POLL_INTERVAL_MS)
+            } catch (e: Exception) {
+                recording = false
+                recorder.cancel()
+                setStatus("Ready")
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.voice_error, e.message ?: "microphone unavailable"),
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
 
-        sendButton.setOnClickListener { executeCommand(input.text.toString().trim()) }
-        voiceButton.setOnClickListener {
-            if (isRecording) stopRecordingAndProcess() else startRecording()
+        send.setOnClickListener { executeCommand(input.text.toString()) }
+        voice.setOnClickListener {
+            if (recording) processRecording() else startRecording()
         }
 
+        view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) = Unit
+            override fun onViewDetachedFromWindow(v: View) {
+                vad?.let(handler::removeCallbacks)
+                if (recording) {
+                    recording = false
+                    recorder.cancel()
+                }
+            }
+        })
+
         if (autoStartVoice) {
-            // Post until the session window is attached and the microphone permission
-            // dialog, if any, has settled; do not require a second Speak tap.
-            mainHandler.postDelayed({ startRecording() }, 250L)
+            handler.postDelayed({ startRecording() }, 300L)
         }
     }
 }

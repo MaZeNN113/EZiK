@@ -1,9 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    supportsAssist=true + recognitionService (لازم يكون موجود عشان أندرويد يعتبرنا
-    "voice interaction service" مكتمل ويطلعنا في قايمة Digital assistant app —
-    من غيره أغلب الأجهزة (خصوصاً MIUI) بتستبعدنا من القايمة بصمت وتفضل تقول None).
--->
 <voice-interaction-service
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:sessionService="viz.EZiK.AssistantSessionService"
