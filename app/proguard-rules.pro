@@ -1,2 +1,1 @@
-# EZiK currently ships without minification. Keep this file so release builds
-# have a stable ProGuard/R8 configuration entry point.
+# EZiK currently keeps release code readable for debugging. Add rules here when shrinking is enabled.

@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.provider.Settings
 import java.util.Locale
 
 sealed interface AssistantAction {
@@ -13,190 +12,145 @@ sealed interface AssistantAction {
     data class SearchInApp(val appQuery: String, val searchQuery: String) : AssistantAction
     data class WebSearch(val query: String) : AssistantAction
     data class OpenUrl(val url: String) : AssistantAction
-    data class OpenSettings(val action: String) : AssistantAction
     data class Speak(val text: String) : AssistantAction
-    data class Answer(val text: String) : AssistantAction
 }
 
 object CommandPlanner {
-    private val knownWakeMishears = setOf("isaac", "ezekiel", "izik", "ezeek", "azik", "ezic")
+
+    // أي كلمة ممكن Whisper يسمعها بالغلط بدل "EZiK" (زي Isaac) بتتحط هنا
+    // كخط دفاع إضافي، لكن الحل الأساسي هو إعادة المحاولة بعد شيل أول كلمة
+    // (tryParse فالغة → نجرب تاني من غير أول توكن) عشان يشتغل حتى مع أخطاء مسموعة جديدة.
+    private val knownWakeMishears = setOf("isaac", "ezekiel", "izik", "ezeek", "azik")
 
     fun plan(raw: String): AssistantAction {
         val normalized = raw.trim().replace(Regex("\\s+"), " ")
-        if (normalized.isBlank()) return AssistantAction.Speak("What would you like me to do?")
-
-        val wakeOnly = Regex("(?i)^(?:(?:hey|يا)\\s+)?(?:ezik|e-zik|إيزيك|ايزيك)[.!؟،,!؟?:؛\\s]*$")
-        if (wakeOnly.matches(normalized)) {
+        val wakeWordPattern = Regex("(?i)^(?:(?:hey|يا)\\s+)?(?:ezik|e-zik|إيزيك|ايزيك)[،,!؟?:؛\\s]+")
+        val wakeOnlyPattern = Regex("(?i)^(?:(?:hey|يا)\\s+)?(?:ezik|e-zik|إيزيك|ايزيك)[.!؟،,!؟?:؛\\s]*$")
+        if (wakeOnlyPattern.matches(normalized)) {
             return AssistantAction.Speak("أيوه، معاك EZiK. قول لي أعمل إيه؟")
         }
 
-        var command = stripWakeWord(normalized)
-        if (command.substringBefore(' ').trimEnd(',', '،').lowercase(Locale.ROOT) in knownWakeMishears) {
+        var command = normalized.replace(wakeWordPattern, "").trim()
+        // لو أول كلمة من أشهر الأخطاء المسموعة بدل EZiK، امسحها برضه
+        val firstWord = command.substringBefore(' ').trimEnd(',', '،').lowercase(Locale.ROOT)
+        if (firstWord in knownWakeMishears) {
             command = command.substringAfter(' ', "").trim()
         }
 
-        parse(command)?.let { return it }
+        tryParse(command)?.let { return it }
 
+        // خط دفاع أخير: لو النص بيبدأ بكلمة غريبة متبوعة بفاصلة (نمط "اسم، أمر"،
+        // زي "Isaac, open Goodreads")، ده على الأغلب EZiK اتسمعت غلط — نشيل
+        // أول كلمة ونجرب تاني، من غير ما نحتاج نعرف كل الأخطاء المسموعة مقدماً.
         val withoutLeadingWord = command.replace(Regex("^\\S+[،,]\\s*"), "").trim()
-        if (withoutLeadingWord != command) parse(withoutLeadingWord)?.let { return it }
+        if (withoutLeadingWord.isNotEmpty() && withoutLeadingWord != command) {
+            tryParse(withoutLeadingWord)?.let { return it }
+        }
 
         return AssistantAction.Speak("I understood: $command")
     }
 
-    private fun stripWakeWord(text: String): String {
-        val pattern = Regex("(?i)^(?:(?:hey|يا)\\s+)?(?:ezik|e-zik|إيزيك|ايزيك)(?:[,.!؟?:؛\\s]+|$)")
-        return text.replace(pattern, "").trim()
-    }
-
-    private fun parse(command: String): AssistantAction? {
+    private fun tryParse(command: String): AssistantAction? {
         val lower = command.lowercase(Locale.ROOT)
+        val launchPrefixes = listOf("open ", "launch ", "start ", "افتح ", "شغل ", "شغّل ", "روح على ")
+        val searchPrefixes = listOf("search for ", "search ", "ابحث عن ", "دور على ", "دور في ", "find ")
+        val inAppMarkers = listOf(" and search for ", " وابحث عن ", " وابحث في ", " and find ")
 
-        val settings = listOf(
-            "open wifi settings" to Intent(Settings.ACTION_WIFI_SETTINGS),
-            "wifi settings" to Intent(Settings.ACTION_WIFI_SETTINGS),
-            "open bluetooth settings" to Intent(Settings.ACTION_BLUETOOTH_SETTINGS),
-            "bluetooth settings" to Intent(Settings.ACTION_BLUETOOTH_SETTINGS),
-            "open app settings" to Intent(Settings.ACTION_APPLICATION_SETTINGS)
-        )
-        settings.firstOrNull { lower == it.first }?.let { pair ->
-            pair.second.action?.let { action -> return AssistantAction.OpenSettings(action) }
-        }
-
-        val inAppMarkers = listOf(" and search for ", " and find ", " وابحث عن ", " وابحث في ")
         inAppMarkers.firstOrNull { lower.contains(it) }?.let { marker ->
-            val index = lower.indexOf(marker)
-            val app = command.substring(0, index)
-                .removePrefixIgnoreCase("open ")
-                .removePrefixIgnoreCase("افتح ")
-                .trim()
-            val query = command.substring(index + marker.length).trim()
-            if (app.isNotBlank() && query.isNotBlank()) return AssistantAction.SearchInApp(app, query)
+            val parts = command.split(marker, limit = 2)
+            if (parts.size == 2) {
+                val app = parts[0].removePrefix("open ").removePrefix("افتح ").trim()
+                return AssistantAction.SearchInApp(app, parts[1].trim())
+            }
         }
-
-        val launchPrefixes = listOf("open ", "launch ", "start ", "go to ", "افتح ", "شغل ", "شغّل ", "روح على ")
         launchPrefixes.firstOrNull { lower.startsWith(it) }?.let {
-            val app = command.substring(it.length).trim()
-            if (app.isNotBlank()) return AssistantAction.LaunchApp(app)
+            return AssistantAction.LaunchApp(command.drop(it.length).trim())
         }
-
-        val searchPrefixes = listOf("search for ", "search ", "look up ", "ابحث عن ", "دور على ", "دور في ", "find ")
         searchPrefixes.firstOrNull { lower.startsWith(it) }?.let {
-            val query = command.substring(it.length).trim()
-            if (query.isNotBlank()) return AssistantAction.WebSearch(query)
+            return AssistantAction.WebSearch(command.drop(it.length).trim())
         }
-
-        if (lower.startsWith("http://") || lower.startsWith("https://")) {
-            return AssistantAction.OpenUrl(command)
-        }
-
+        if (lower.startsWith("http://") || lower.startsWith("https://")) return AssistantAction.OpenUrl(command)
         return null
     }
-
-    private fun String.removePrefixIgnoreCase(prefix: String): String =
-        if (startsWith(prefix, ignoreCase = true)) substring(prefix.length) else this
 }
 
+/**
+ * مطابقة "ذكية" لاسم التطبيق: مطابقة كاملة، بعدها احتواء (متجاهلة الفراغات
+ * الزيادة)، وأخيراً أقرب تشابه (Levenshtein) عشان الأخطاء الإملائية الصغيرة
+ * (زي "Good Reads" بدل "Goodreads") تتقبل برضه بدل ما ترجع "couldn't find".
+ */
 private fun findBestAppMatch(context: Context, query: String): ApplicationInfo? {
     val pm = context.packageManager
     val q = query.trim().lowercase(Locale.ROOT)
     if (q.isEmpty()) return null
-    val compact = q.replace(Regex("[\\s._-]+"), "")
-
+    val qCompact = q.replace(" ", "")
     val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-        .filter { it.enabled }
 
-    fun label(app: ApplicationInfo) = pm.getApplicationLabel(app).toString().trim().lowercase(Locale.ROOT)
-    fun compactLabel(app: ApplicationInfo) = label(app).replace(Regex("[\\s._-]+"), "")
+    fun label(app: ApplicationInfo) = pm.getApplicationLabel(app).toString().lowercase(Locale.ROOT)
 
     apps.firstOrNull { label(it) == q }?.let { return it }
-    apps.firstOrNull { compactLabel(it) == compact }?.let { return it }
-    apps.firstOrNull { compactLabel(it).contains(compact) }?.let { return it }
-    apps.firstOrNull { it.packageName.lowercase(Locale.ROOT).contains(compact) }?.let { return it }
+    apps.firstOrNull { label(it).replace(" ", "").contains(qCompact) }?.let { return it }
+    apps.firstOrNull { it.packageName.lowercase(Locale.ROOT).contains(qCompact) }?.let { return it }
 
-    val maxDistance = (q.length / 3).coerceIn(2, 4)
-    return apps.asSequence()
-        .map { it to levenshtein(compactLabel(it), compact) }
+    val maxAllowedDistance = (q.length / 3).coerceAtLeast(2)
+    return apps
+        .map { it to levenshtein(label(it), q) }
         .minByOrNull { it.second }
-        ?.takeIf { it.second <= maxDistance }
+        ?.takeIf { it.second <= maxAllowedDistance }
         ?.first
 }
 
 private fun levenshtein(a: String, b: String): Int {
-    if (a == b) return 0
-    if (a.isEmpty()) return b.length
-    if (b.isEmpty()) return a.length
-    var previous = IntArray(b.length + 1) { it }
-    for (i in a.indices) {
-        val current = IntArray(b.length + 1)
-        current[0] = i + 1
-        for (j in b.indices) {
-            val cost = if (a[i] == b[j]) 0 else 1
-            current[j + 1] = minOf(
-                current[j] + 1,
-                previous[j + 1] + 1,
-                previous[j] + cost
-            )
+    val dp = Array(a.length + 1) { IntArray(b.length + 1) }
+    for (i in 0..a.length) dp[i][0] = i
+    for (j in 0..b.length) dp[0][j] = j
+    for (i in 1..a.length) {
+        for (j in 1..b.length) {
+            val cost = if (a[i - 1] == b[j - 1]) 0 else 1
+            dp[i][j] = minOf(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost)
         }
-        previous = current
     }
-    return previous[b.length]
-}
-
-object AssistantBrain {
-    fun resolve(context: Context, raw: String): Result<AssistantAction> {
-        val direct = CommandPlanner.plan(raw)
-        if (direct !is AssistantAction.Speak || direct.text.startsWith("أيوه، معاك")) {
-            return Result.success(direct)
-        }
-        if (!SecureStore(context).hasApiKey()) return Result.success(direct)
-        return GroqChatClient(context).decide(raw)
-    }
+    return dp[a.length][b.length]
 }
 
 object ActionExecutor {
     fun execute(context: Context, action: AssistantAction): String {
-        val pm = context.packageManager
-        return when (action) {
+        when (action) {
             is AssistantAction.LaunchApp -> {
-                val match = findBestAppMatch(context, action.query)
-                    ?: return "I couldn't find ${action.query}"
-                val intent = pm.getLaunchIntentForPackage(match.packageName)
-                    ?: return "${action.query} cannot be opened"
-                context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                "Opening ${pm.getApplicationLabel(match)}"
+                val pm = context.packageManager
+                val match = findBestAppMatch(context, action.query) ?: return "I couldn't find ${action.query}"
+                pm.getLaunchIntentForPackage(match.packageName)?.let {
+                    it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(it)
+                    return "Opening ${pm.getApplicationLabel(match)}"
+                }
+                return "${action.query} cannot be opened"
             }
             is AssistantAction.SearchInApp -> {
-                val match = findBestAppMatch(context, action.appQuery)
-                    ?: return "I couldn't find ${action.appQuery}"
+                val pm = context.packageManager
+                val match = findBestAppMatch(context, action.appQuery) ?: return "I couldn't find ${action.appQuery}"
                 val searchIntent = Intent(Intent.ACTION_SEARCH).apply {
                     setPackage(match.packageName)
                     putExtra("query", action.searchQuery)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-                val intent = if (searchIntent.resolveActivity(pm) != null) {
-                    searchIntent
-                } else {
-                    pm.getLaunchIntentForPackage(match.packageName)
-                        ?: return "${action.appQuery} cannot be opened"
-                }
-                context.startActivity(intent)
-                "Searching ${pm.getApplicationLabel(match)} for ${action.searchQuery}"
+                val launchIntent = pm.getLaunchIntentForPackage(match.packageName)
+                context.startActivity(
+                    if (searchIntent.resolveActivity(pm) != null) searchIntent
+                    else launchIntent ?: return "${action.appQuery} cannot be opened"
+                )
+                return "Searching ${pm.getApplicationLabel(match)} for ${action.searchQuery}"
             }
             is AssistantAction.WebSearch -> {
                 val uri = Uri.parse("https://www.google.com/search?q=${Uri.encode(action.query)}")
                 context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                "Searching for ${action.query}"
+                return "Searching for ${action.query}"
             }
             is AssistantAction.OpenUrl -> {
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(action.url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                "Opening link"
+                return "Opening link"
             }
-            is AssistantAction.OpenSettings -> {
-                context.startActivity(Intent(action.action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                "Opening settings"
-            }
-            is AssistantAction.Speak -> action.text
-            is AssistantAction.Answer -> action.text
+            is AssistantAction.Speak -> return action.text
         }
     }
 }

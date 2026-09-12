@@ -35,6 +35,7 @@ class AssistantSession(context: Context) : VoiceInteractionSession(context) {
             window.setGravity(Gravity.BOTTOM)
             window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
             window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL)
             window.attributes = window.attributes.apply { dimAmount = 0.18f }
         }

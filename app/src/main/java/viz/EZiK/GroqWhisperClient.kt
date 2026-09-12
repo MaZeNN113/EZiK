@@ -8,25 +8,21 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.UUID
 
-class GroqWhisperClient(context: Context) {
-    private val apiKey = SecureStore(context).getApiKey()
-
+class GroqWhisperClient(private val context: Context) {
     fun transcribe(audioFile: File): Result<String> = runCatching {
-        require(!apiKey.isNullOrBlank()) { "Groq API key is not configured" }
-        require(audioFile.exists() && audioFile.length() > 0) { "Audio file is empty" }
-
+        val apiKey = SecurePrefs.getGroqKey(context)
+        require(apiKey.isNotBlank()) { "Add your Groq API key in EZiK settings" }
+        require(audioFile.exists()) { "Audio file does not exist" }
         val boundary = "----EZiK-${UUID.randomUUID()}"
         val connection = (URL(ENDPOINT).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             doOutput = true
+            connectTimeout = 4_000
+            readTimeout = 12_000
             useCaches = false
-            connectTimeout = 10_000
-            readTimeout = 30_000
             setRequestProperty("Authorization", "Bearer $apiKey")
-            setRequestProperty("Accept", "application/json")
             setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
         }
-
         try {
             DataOutputStream(connection.outputStream).use { output ->
                 writeField(output, boundary, "model", MODEL)
@@ -36,21 +32,15 @@ class GroqWhisperClient(context: Context) {
                 output.writeBytes("--$boundary\r\n")
                 output.writeBytes("Content-Disposition: form-data; name=\"file\"; filename=\"command.m4a\"\r\n")
                 output.writeBytes("Content-Type: audio/mp4\r\n\r\n")
-                audioFile.inputStream().use { it.copyTo(output) }
+                audioFile.inputStream().use { it.copyTo(output, 16 * 1024) }
                 output.writeBytes("\r\n--$boundary--\r\n")
             }
-
             val code = connection.responseCode
             val body = (if (code in 200..299) connection.inputStream else connection.errorStream)
                 ?.bufferedReader()?.use { it.readText() }.orEmpty()
-
-            if (code !in 200..299) {
-                val detail = runCatching { JSONObject(body).optJSONObject("error")?.optString("message") }.getOrNull()
-                error("Groq HTTP $code${detail?.let { ": $it" } ?: ""}")
-            }
-
+            if (code !in 200..299) error("Groq HTTP $code")
             JSONObject(body).optString("text").trim().also {
-                require(it.isNotBlank()) { "Groq returned an empty transcription" }
+                require(it.isNotBlank()) { "Groq returned empty transcription" }
             }
         } finally {
             connection.disconnect()
@@ -66,9 +56,6 @@ class GroqWhisperClient(context: Context) {
     companion object {
         private const val ENDPOINT = "https://api.groq.com/openai/v1/audio/transcriptions"
         private const val MODEL = "whisper-large-v3-turbo"
-        private const val PROMPT =
-            "EZiK voice assistant command. Spoken in Egyptian Arabic or English. " +
-            "The assistant name is EZiK, pronounced ee-zik. It may be said first. " +
-            "Preserve app names, URLs, book titles, numbers and English words accurately."
+        private const val PROMPT = "EZiK voice assistant command in Egyptian Arabic or English. Preserve app names, book titles, URLs and English words. EZiK may be misheard as Isaac or Ezekiel."
     }
 }

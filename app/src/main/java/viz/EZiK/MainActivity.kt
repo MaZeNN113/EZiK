@@ -11,111 +11,85 @@ import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import android.widget.Toast
 import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
     private lateinit var statusText: TextView
+    private lateinit var micStatusText: TextView
+    private lateinit var accessibilityStatusText: TextView
     private lateinit var shizukuStatusText: TextView
-    private lateinit var voiceKeyStatusText: TextView
-    private lateinit var groqKeyInput: EditText
     private val commandExecutor = Executors.newSingleThreadExecutor()
-    private val secureStore by lazy { SecureStore(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
         statusText = findViewById(R.id.statusText)
+        micStatusText = findViewById(R.id.micStatusText)
+        accessibilityStatusText = findViewById(R.id.accessibilityStatusText)
         shizukuStatusText = findViewById(R.id.shizukuStatusText)
-        voiceKeyStatusText = findViewById(R.id.voiceKeyStatusText)
-        groqKeyInput = findViewById(R.id.groqKeyInput)
 
-        CommandUiBinder.bind(
-            findViewById(R.id.commandPanel),
-            this,
-            commandExecutor,
-            onFinished = {}
-        )
+        CommandUiBinder.bind(findViewById(R.id.commandPanel), this, commandExecutor, onFinished = { updateStatus() })
 
         findViewById<Button>(R.id.makeDefaultButton).setOnClickListener { requestAssistantRole() }
-        findViewById<Button>(R.id.openAssistantSettingsButton).setOnClickListener {
-            openSettings(Settings.ACTION_VOICE_INPUT_SETTINGS)
-        }
-        findViewById<Button>(R.id.requestShizukuButton).setOnClickListener {
-            ShizukuManager.requestPermission(this)
+        findViewById<Button>(R.id.openAssistantSettingsButton).setOnClickListener { openSettings(Settings.ACTION_VOICE_INPUT_SETTINGS) }
+        findViewById<Button>(R.id.requestShizukuButton).setOnClickListener { ShizukuManager.requestPermission(this); updateStatus() }
+        findViewById<Button>(R.id.openAccessibilitySettingsButton).setOnClickListener { openSettings(Settings.ACTION_ACCESSIBILITY_SETTINGS) }
+        findViewById<Button>(R.id.openAppSettingsButton).setOnClickListener { openSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$packageName") }
+
+        val keyInput = findViewById<EditText>(R.id.groqKeyInput)
+        findViewById<Button>(R.id.saveGroqKeyButton).setOnClickListener {
+            SecurePrefs.saveGroqKey(this, keyInput.text.toString())
+            keyInput.text.clear()
             updateStatus()
-        }
-        findViewById<Button>(R.id.openAccessibilitySettingsButton).setOnClickListener {
-            openSettings(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-        }
-        findViewById<Button>(R.id.saveGroqButton).setOnClickListener {
-            secureStore.putApiKey(groqKeyInput.text.toString())
-            groqKeyInput.text?.clear()
-            Toast.makeText(this, if (secureStore.hasApiKey()) "Groq key saved" else "Groq key removed", Toast.LENGTH_SHORT).show()
-            updateStatus()
+            android.widget.Toast.makeText(this, "Groq key stored securely", android.widget.Toast.LENGTH_SHORT).show()
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_CODE_RECORD_AUDIO)
         }
-        updateStatus()
     }
 
-    override fun onResume() {
-        super.onResume()
-        updateStatus()
-    }
+    override fun onResume() { super.onResume(); updateStatus() }
 
-    override fun onDestroy() {
-        commandExecutor.shutdownNow()
-        super.onDestroy()
-    }
+    override fun onDestroy() { commandExecutor.shutdownNow(); super.onDestroy() }
 
     private fun updateStatus() {
-        val assistantReady = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val assistant = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_ASSISTANT) == true
         } else false
+        statusText.text = if (assistant) "● EZiK is your default assistant" else "○ EZiK is not your default assistant"
+        statusText.setTextColor(if (assistant) 0xFF55D187.toInt() else 0xFFFFB454.toInt())
 
-        val accessibilityOn = runCatching {
-            val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-            enabled?.split(':')?.any { it.contains(packageName, ignoreCase = true) } == true
-        }.getOrDefault(false)
+        val micGranted = checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        micStatusText.text = if (micGranted) "● Microphone permission: ready" else "○ Microphone permission: required"
+        micStatusText.setTextColor(if (micGranted) 0xFF55D187.toInt() else 0xFFFF6B6B.toInt())
 
-        statusText.text = listOf(
-            if (assistantReady) getString(R.string.status_is_assistant) else getString(R.string.status_not_assistant),
-            if (accessibilityOn) getString(R.string.status_accessibility_on) else getString(R.string.status_accessibility_off)
-        ).joinToString("  •  ")
+        val accessibility = isAccessibilityEnabled()
+        accessibilityStatusText.text = if (accessibility) "● Accessibility: enabled" else "○ Accessibility: not enabled"
+        accessibilityStatusText.setTextColor(if (accessibility) 0xFF55D187.toInt() else 0xFFFFB454.toInt())
 
         shizukuStatusText.text = getString(R.string.shizuku_status, ShizukuManager.status(this))
-        voiceKeyStatusText.text = if (secureStore.hasApiKey()) {
-            getString(R.string.status_groq_ready)
-        } else {
-            getString(R.string.status_groq_missing)
-        }
+    }
+
+    private fun isAccessibilityEnabled(): Boolean {
+        val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+        return enabled.split(':').any { it.equals("$packageName/.EZiKAccessibilityService", true) || it.endsWith("/.EZiKAccessibilityService", true) }
     }
 
     private fun requestAssistantRole() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val roleManager = getSystemService(RoleManager::class.java)
-            if (roleManager?.isRoleHeld(RoleManager.ROLE_ASSISTANT) == true) {
-                Toast.makeText(this, R.string.status_is_assistant, Toast.LENGTH_SHORT).show()
-                return
-            }
             if (roleManager?.isRoleAvailable(RoleManager.ROLE_ASSISTANT) == true) {
-                startActivityForResult(
-                    roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT),
-                    REQUEST_CODE_ASSISTANT_ROLE
-                )
-                return
-            }
-        }
-        openSettings(Settings.ACTION_VOICE_INPUT_SETTINGS)
+                if (roleManager.isRoleHeld(RoleManager.ROLE_ASSISTANT)) return
+                startActivityForResult(roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT), REQUEST_CODE_ASSISTANT_ROLE)
+            } else openSettings(Settings.ACTION_VOICE_INPUT_SETTINGS)
+        } else openSettings(Settings.ACTION_VOICE_INPUT_SETTINGS)
     }
 
-    private fun openSettings(action: String) {
-        runCatching { startActivity(Intent(action)) }
+    private fun openSettings(action: String, data: String? = null) {
+        runCatching { startActivity(Intent(action).apply { if (data != null) setData(android.net.Uri.parse(data)) }) }
             .onFailure { startActivity(Intent(Settings.ACTION_SETTINGS)) }
     }
 

@@ -8,60 +8,42 @@ class VoiceRecorder(private val context: Context) {
     private var recorder: MediaRecorder? = null
     private var output: File? = null
 
-    @Synchronized
     fun start(): File {
         check(recorder == null) { "Already recording" }
         val file = File.createTempFile("ezik-command-", ".m4a", context.cacheDir)
-        try {
-            val r = MediaRecorder(context).apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setAudioEncodingBitRate(96_000)
-                setAudioSamplingRate(16_000)
-                setOutputFile(file.absolutePath)
-                prepare()
-                start()
-            }
-            output = file
-            recorder = r
-            return file
-        } catch (t: Throwable) {
-            file.delete()
-            recorder?.release()
-            recorder = null
-            output = null
-            throw t
+        output = file
+        recorder = MediaRecorder(context).apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setAudioEncodingBitRate(128_000)
+            setAudioSamplingRate(16_000)
+            setOutputFile(file.absolutePath)
+            prepare()
+            start()
         }
+        return file
     }
 
-    fun currentAmplitude(): Int = runCatching { recorder?.maxAmplitude ?: 0 }.getOrDefault(0)
+    /** بيرجع مستوى الصوت الحالي (0 لو مفيش تسجيل شغال) — مستخدم لاكتشاف السكوت. */
+    fun currentAmplitude(): Int = try { recorder?.maxAmplitude ?: 0 } catch (_: Exception) { 0 }
 
-    @Synchronized
     fun stop(): File? {
         val active = recorder ?: return null
-        val file = output
-        recorder = null
-        output = null
         return try {
             active.stop()
-            file
-        } catch (_: RuntimeException) {
-            file?.delete()
-            null
+            output
         } finally {
             active.release()
+            recorder = null
         }
     }
 
-    @Synchronized
     fun cancel() {
-        val active = recorder
+        try { recorder?.stop() } catch (_: Exception) { }
+        recorder?.release()
         recorder = null
-        val file = output
+        output?.delete()
         output = null
-        runCatching { active?.stop() }
-        active?.release()
-        file?.delete()
     }
 }
