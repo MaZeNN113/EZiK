@@ -58,7 +58,9 @@ object CommandPlanner {
             "bluetooth settings" to Intent(Settings.ACTION_BLUETOOTH_SETTINGS),
             "open app settings" to Intent(Settings.ACTION_APPLICATION_SETTINGS)
         )
-        settings.firstOrNull { lower == it.first }?.let { return AssistantAction.OpenSettings(it.second.action) }
+        settings.firstOrNull { lower == it.first }?.let { pair ->
+            pair.second.action?.let { action -> return AssistantAction.OpenSettings(action) }
+        }
 
         val inAppMarkers = listOf(" and search for ", " and find ", " وابحث عن ", " وابحث في ")
         inAppMarkers.firstOrNull { lower.contains(it) }?.let { marker ->
