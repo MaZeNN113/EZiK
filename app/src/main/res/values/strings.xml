@@ -31,5 +31,5 @@
     <string name="shizuku_ready">ready</string>
     <string name="shizuku_not_running">Start Shizuku first</string>
     <string name="action_failed">Action failed: %1$s</string>
-    <string name="nothing_found">I couldn't find that app</string>
+    <string name="nothing_found">Could not find that app</string>
 </resources>
