@@ -45,27 +45,9 @@ class AssistActivity : Activity() {
     }
 
     private fun installImeHandling(root: View) {
-        // VoiceInteractionSession/Dialog windows do not always honor adjustResize on
-        // vendor Android builds. Move the actual window above the IME instead of only
-        // translating the content, which was the reason the keyboard could cover it.
-        val targetWindow = window
-        targetWindow.decorView.setOnApplyWindowInsetsListener { _, insets ->
-            val imeBottom = if (android.os.Build.VERSION.SDK_INT >= 30) {
-                insets.getInsets(android.view.WindowInsets.Type.ime()).bottom
-            } else 0
-            val navBottom = if (android.os.Build.VERSION.SDK_INT >= 30) {
-                insets.getInsets(android.view.WindowInsets.Type.navigationBars()).bottom
-            } else 0
-            val offset = (imeBottom - navBottom).coerceAtLeast(0)
-            val lp = targetWindow.attributes
-            if (lp.gravity and Gravity.VERTICAL_GRAVITY_MASK == Gravity.BOTTOM) {
-                lp.y = offset
-                targetWindow.attributes = lp
-            }
-            root.translationY = 0f
-            insets
-        }
-        targetWindow.decorView.requestApplyInsets()
+        // Let Android's adjustResize perform one stable layout pass. Mutating the
+        // window's bottom offset from inside WindowInsets creates a relayout loop on MIUI.
+        window.decorView.setOnApplyWindowInsetsListener { _, insets -> insets }
     }
 
     override fun onDestroy() {

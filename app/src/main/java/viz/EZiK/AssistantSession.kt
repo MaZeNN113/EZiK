@@ -36,10 +36,6 @@ class AssistantSession(context: Context) : VoiceInteractionSession(context) {
         super.onShow(args, showFlags)
         getWindow()?.window?.let { window ->
             configureWindow(window)
-            window.decorView.post {
-                configureWindow(window)
-                window.decorView.requestLayout()
-            }
         }
     }
 
@@ -63,27 +59,10 @@ class AssistantSession(context: Context) : VoiceInteractionSession(context) {
     }
 
     private fun installImeHandling(root: View) {
-        // VoiceInteractionSession/Dialog windows do not always honor adjustResize on
-        // vendor Android builds. Move the actual window above the IME instead of only
-        // translating the content, which was the reason the keyboard could cover it.
         val targetWindow = getWindow()?.window ?: return
-        targetWindow.decorView.setOnApplyWindowInsetsListener { _, insets ->
-            val imeBottom = if (android.os.Build.VERSION.SDK_INT >= 30) {
-                insets.getInsets(android.view.WindowInsets.Type.ime()).bottom
-            } else 0
-            val navBottom = if (android.os.Build.VERSION.SDK_INT >= 30) {
-                insets.getInsets(android.view.WindowInsets.Type.navigationBars()).bottom
-            } else 0
-            val offset = (imeBottom - navBottom).coerceAtLeast(0)
-            val lp = targetWindow.attributes
-            if (lp.gravity and Gravity.VERTICAL_GRAVITY_MASK == Gravity.BOTTOM) {
-                lp.y = offset
-                targetWindow.attributes = lp
-            }
-            root.translationY = 0f
-            insets
-        }
-        targetWindow.decorView.requestApplyInsets()
+        // adjustResize handles the IME. Changing window.y from an insets callback causes
+        // a relayout loop on MIUI and makes the keyboard visibly jump.
+        targetWindow.decorView.setOnApplyWindowInsetsListener { _, insets -> insets }
     }
 
     override fun onDestroy() {

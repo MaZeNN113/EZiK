@@ -118,19 +118,16 @@ object ActionExecutor {
         return when (action) {
         is AssistantAction.LaunchApp -> launch(context, action.query)
         is AssistantAction.SearchInApp -> appCommand(context, action.appQuery, "search") {
-            if (EZiKAccessibilityService.isReady()) {
-                Thread.sleep(1200)
-                EZiKAccessibilityService.search(action.searchQuery) == true
-            } else false
-        } .let { if (it) "Searching ${action.appQuery} for ${action.searchQuery}" else "Opened ${action.appQuery}, but its search UI could not be controlled. Enable EZiK Accessibility." }
+            retryUiAction { EZiKAccessibilityService.search(action.searchQuery) }
+        }.let { if (it) "Searching ${action.appQuery} for ${action.searchQuery}" else "Opened ${action.appQuery}, but its search UI could not be controlled. Enable EZiK Accessibility." }
         is AssistantAction.TapInApp -> appCommand(context, action.appQuery, "tap") {
-            Thread.sleep(1200); EZiKAccessibilityService.tap(action.target) == true
+            retryUiAction { EZiKAccessibilityService.tap(action.target) }
         }.let { if (it) "Tapped ${action.target}" else "Opened ${action.appQuery}, but I couldn't find '${action.target}'." }
         is AssistantAction.TypeInApp -> appCommand(context, action.appQuery, "type") {
-            Thread.sleep(1200); EZiKAccessibilityService.type(action.text) == true
+            retryUiAction { EZiKAccessibilityService.type(action.text) }
         }.let { if (it) "Typed into ${action.appQuery}" else "Opened ${action.appQuery}, but I couldn't find an editable field." }
         is AssistantAction.ScrollInApp -> appCommand(context, action.appQuery, "scroll") {
-            Thread.sleep(1200); if (action.forward) EZiKAccessibilityService.scrollForward() == true else EZiKAccessibilityService.scrollBackward() == true
+            retryUiAction { if (action.forward) EZiKAccessibilityService.scrollForward() else EZiKAccessibilityService.scrollBackward() }
         }.let { if (it) "Scrolled" else "Opened ${action.appQuery}, but no scrollable area was found." }
         is AssistantAction.BackInApp -> { launch(context, action.appQuery); Thread.sleep(500); if (EZiKAccessibilityService.performBack()) "Went back" else "Back action unavailable" }
         is AssistantAction.WebSearch -> {
@@ -152,11 +149,17 @@ object ActionExecutor {
     }
 
     private fun appCommand(context: Context, appQuery: String, ignored: String, action: () -> Boolean): Boolean {
-        if (!EZiKAccessibilityService.isReady()) {
-            launch(context, appQuery)
-            return false
-        }
         launch(context, appQuery)
+        if (!EZiKAccessibilityService.isReady()) return false
+        Thread.sleep(800)
         return action()
+    }
+
+    private fun retryUiAction(action: () -> Boolean): Boolean {
+        repeat(5) {
+            if (action()) return true
+            Thread.sleep(450)
+        }
+        return false
     }
 }

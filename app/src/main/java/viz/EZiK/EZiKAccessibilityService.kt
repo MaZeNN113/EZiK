@@ -39,6 +39,7 @@ class EZiKAccessibilityService : AccessibilityService() {
                 searchNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, android.os.Bundle().apply {
                     putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, query)
                 })
+                searchNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                 return@runOnService true
             }
             if (searchNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
@@ -82,10 +83,10 @@ class EZiKAccessibilityService : AccessibilityService() {
         private fun findSearchNode(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
             val nodes = mutableListOf<AccessibilityNodeInfo>()
             collect(root, nodes)
-            val words = listOf("search", "find", "بحث", "بحث عن", "rechercher")
+            val words = listOf("search", "find", "query", "بحث", "بحث عن", "rechercher")
             return nodes.firstOrNull { node ->
-                val hay = "${node.text ?: ""} ${node.contentDescription ?: ""}".lowercase(Locale.ROOT)
-                words.any { hay.contains(it) }
+                val hay = "${node.text ?: ""} ${node.contentDescription ?: ""} ${node.hintText ?: ""} ${node.viewIdResourceName ?: ""}".lowercase(Locale.ROOT)
+                node.isEditable && words.any { hay.contains(it) }
             } ?: findEditable(root)
         }
 
