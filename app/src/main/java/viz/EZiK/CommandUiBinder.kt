@@ -129,7 +129,13 @@ object CommandUiBinder {
         input.setOnEditorActionListener { _, actionId, _ -> if (actionId == EditorInfo.IME_ACTION_SEND) { executeCommand(input.text.toString()); true } else false }
 
         if (autoStartVoice && EZiKPrefs.autoVoice(context)) {
-            main.postDelayed { if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) startVoice() else setState("Microphone permission required") }, 120L)
+            main.postDelayed({
+                if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                    startVoice()
+                } else {
+                    setState("Microphone permission required")
+                }
+            }, 120L)
         }
     }
 }

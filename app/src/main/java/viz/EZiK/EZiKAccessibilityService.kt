@@ -1,7 +1,6 @@
 package viz.EZiK
 
 import android.accessibilityservice.AccessibilityService
-
 import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityNodeInfo
@@ -9,10 +8,7 @@ import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-/**
- * Generic UI bridge. It can inspect and operate the currently visible accessibility tree.
- * This is intentionally generic: app-specific adapters can be added later for deeper APIs.
- */
+/** Generic UI bridge for the currently visible accessibility tree. */
 class EZiKAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -20,7 +16,6 @@ class EZiKAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: android.view.accessibility.AccessibilityEvent?) = Unit
-
     override fun onInterrupt() = Unit
 
     override fun onDestroy() {
@@ -32,14 +27,10 @@ class EZiKAccessibilityService : AccessibilityService() {
         @Volatile private var instance: EZiKAccessibilityService? = null
 
         fun isReady(): Boolean = instance != null
-
         fun performBack(): Boolean = instance?.performGlobalAction(GLOBAL_ACTION_BACK) == true
+        fun scrollForward(): Boolean = findScrollable()?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) == true
+        fun scrollBackward(): Boolean = findScrollable()?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) == true
 
-        fun scrollForward(): Boolean = instance?.findScrollable()?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) == true
-
-        fun scrollBackward(): Boolean = instance?.findScrollable()?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) == true
-
-        /** Search the visible app UI without requiring a hard-coded package implementation. */
         fun search(query: String): Boolean = runOnService {
             val root = rootInActiveWindow ?: return@runOnService false
             val searchNode = findSearchNode(root) ?: return@runOnService false
@@ -48,27 +39,24 @@ class EZiKAccessibilityService : AccessibilityService() {
                 searchNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, android.os.Bundle().apply {
                     putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, query)
                 })
-                searchNode.performAction(AccessibilityNodeInfo.ACTION_IME_ENTER)
                 return@runOnService true
             }
             if (searchNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
                 Handler(Looper.getMainLooper()).postDelayed({
                     val refreshed = rootInActiveWindow ?: return@postDelayed
-                    val field = findEditable(refreshed)
-                    field?.apply {
+                    findEditable(refreshed)?.apply {
                         performAction(AccessibilityNodeInfo.ACTION_FOCUS)
                         performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, android.os.Bundle().apply {
                             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, query)
                         })
-                        performAction(AccessibilityNodeInfo.ACTION_IME_ENTER)
+                        performAction(AccessibilityNodeInfo.ACTION_CLICK)
                     }
                 }, 350L)
                 return@runOnService true
             }
             false
-        }
+        } == true
 
-        /** Generic tap/click by visible text or content description. */
         fun tap(target: String): Boolean = runOnService {
             val root = rootInActiveWindow ?: return@runOnService false
             findBestNode(root, target)?.let { node ->
@@ -80,7 +68,7 @@ class EZiKAccessibilityService : AccessibilityService() {
                 }
             }
             false
-        }
+        } == true
 
         fun type(text: String): Boolean = runOnService {
             val root = rootInActiveWindow ?: return@runOnService false
@@ -89,7 +77,7 @@ class EZiKAccessibilityService : AccessibilityService() {
             field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, android.os.Bundle().apply {
                 putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
             })
-        }
+        } == true
 
         private fun findSearchNode(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
             val nodes = mutableListOf<AccessibilityNodeInfo>()
