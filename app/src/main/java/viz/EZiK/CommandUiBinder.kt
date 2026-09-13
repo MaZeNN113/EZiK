@@ -13,18 +13,12 @@ import android.widget.TextView
 import android.widget.Toast
 import java.util.concurrent.ExecutorService
 
-/** Shared, lifecycle-safe command UI for launcher, assistant session and fallback activity. */
+/** Shared command surface for the launcher assistant and the full app. */
 object CommandUiBinder {
     private const val MAX_FALLBACK_RECORDING_MS = 6_000L
     private const val MIN_FALLBACK_RECORDING_MS = 500L
 
-    fun bind(
-        view: View,
-        context: Context,
-        executor: ExecutorService,
-        onFinished: () -> Unit,
-        autoStartVoice: Boolean = false
-    ) {
+    fun bind(view: View, context: Context, executor: ExecutorService, onFinished: () -> Unit, autoStartVoice: Boolean = false) {
         val main = Handler(Looper.getMainLooper())
         val liveSpeech = LiveSpeechRecognizer(context)
         val recorder = VoiceRecorder(context)
@@ -32,7 +26,6 @@ object CommandUiBinder {
         var liveRecording = false
         var fallbackStarted = 0L
         var fallbackStop: Runnable? = null
-        var destroyed = false
 
         val input = view.findViewById<EditText>(R.id.commandInput)
         val send = view.findViewById<Button>(R.id.sendButton)
@@ -51,7 +44,13 @@ object CommandUiBinder {
             send.isEnabled = false
             voice.isEnabled = false
             executor.execute {
-                val result = runCatching { ActionExecutor.execute(context, CommandPlanner.plan(clean)) }
+                val result = runCatching {
+                    var action = CommandPlanner.plan(clean)
+                    if (action is AssistantAction.Speak && EZiKPrefs.cloudReasoning(context)) {
+                        GroqChatClient.resolve(context, clean)?.let { action = it }
+                    }
+                    ActionExecutor.execute(context, action)
+                }
                 main.post {
                     send.isEnabled = true
                     voice.isEnabled = true
@@ -74,40 +73,24 @@ object CommandUiBinder {
             fallbackStop = null
             val file = runCatching { recorder.stop() }.getOrNull()
             voice.isEnabled = true
-            if (file == null) {
-                setState("Voice recording failed")
-                return
-            }
+            if (file == null) { setState("Voice recording failed"); return }
             if (System.currentTimeMillis() - fallbackStarted < MIN_FALLBACK_RECORDING_MS) {
-                file.delete()
-                setState("Speak a little longer")
-                return
+                file.delete(); setState("Speak a little longer"); return
             }
-            setState("Transcribing with Whisper…")
+            setState("Transcribing…")
             executor.execute {
                 val result = GroqWhisperClient(context).transcribe(file)
                 file.delete()
                 main.post {
-                    result.onSuccess { text ->
-                        input.setText(text)
-                        input.setSelection(input.text.length)
-                        setState("Recognized")
-                        executeCommand(text)
-                    }.onFailure { error ->
-                        setState("Voice failed")
-                        Toast.makeText(context, error.message ?: "Whisper failed", Toast.LENGTH_LONG).show()
-                    }
+                    result.onSuccess { text -> input.setText(text); input.setSelection(input.text.length); executeCommand(text) }
+                        .onFailure { error -> setState("Voice failed"); Toast.makeText(context, error.message ?: "Whisper failed", Toast.LENGTH_LONG).show() }
                 }
             }
         }
 
         fun startFallbackRecording() {
             if (fallbackRecording) return
-            runCatching { recorder.start() }.onFailure {
-                setState("Microphone unavailable")
-                Toast.makeText(context, it.message ?: "Microphone unavailable", Toast.LENGTH_LONG).show()
-                return
-            }
+            runCatching { recorder.start() }.onFailure { setState("Microphone unavailable"); return }
             fallbackRecording = true
             fallbackStarted = System.currentTimeMillis()
             voice.text = context.getString(R.string.btn_voice_stop)
@@ -126,70 +109,27 @@ object CommandUiBinder {
             if (liveSpeech.isAvailable()) {
                 liveRecording = true
                 liveSpeech.start(
-                    onState = { state -> main.post { if (!destroyed) setState(state) } },
-                    onResult = { result ->
-                        main.post {
-                            if (destroyed) return@post
-                            liveRecording = false
-                            voice.text = context.getString(R.string.btn_voice_start)
-                            send.isEnabled = true
-                            result.onSuccess { text ->
-                                input.setText(text)
-                                input.setSelection(input.text.length)
-                                setState("Recognized")
-                                executeCommand(text)
-                            }.onFailure { error ->
-                                setState("Voice failed")
-                                Toast.makeText(context, error.message ?: "Speech recognition failed", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
+                    onState = { state -> main.post { setState(state) } },
+                    onResult = { result -> main.post {
+                        liveRecording = false; voice.text = context.getString(R.string.btn_voice_start); send.isEnabled = true
+                        result.onSuccess { text -> input.setText(text); input.setSelection(input.text.length); executeCommand(text) }
+                            .onFailure { error -> setState("Voice failed"); Toast.makeText(context, error.message ?: "Speech recognition failed", Toast.LENGTH_LONG).show() }
+                    } }
                 )
-            } else {
-                startFallbackRecording()
-            }
+            } else startFallbackRecording()
         }
 
         fun stopVoice() {
-            if (liveRecording) {
-                liveRecording = false
-                liveSpeech.stop()
-                voice.text = context.getString(R.string.btn_voice_start)
-                send.isEnabled = true
-                setState("")
-            } else if (fallbackRecording) {
-                finishFallbackRecording()
-                voice.text = context.getString(R.string.btn_voice_start)
-            }
+            if (liveRecording) { liveRecording = false; liveSpeech.stop(); voice.text = context.getString(R.string.btn_voice_start); send.isEnabled = true; setState("") }
+            else if (fallbackRecording) { finishFallbackRecording(); voice.text = context.getString(R.string.btn_voice_start) }
         }
 
         send.setOnClickListener { executeCommand(input.text.toString()) }
-        voice.setOnClickListener {
-            if (liveRecording || fallbackRecording) stopVoice() else startVoice()
-        }
-        input.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEND) {
-                executeCommand(input.text.toString()); true
-            } else false
-        }
+        voice.setOnClickListener { if (liveRecording || fallbackRecording) stopVoice() else startVoice() }
+        input.setOnEditorActionListener { _, actionId, _ -> if (actionId == EditorInfo.IME_ACTION_SEND) { executeCommand(input.text.toString()); true } else false }
 
-        if (autoStartVoice) {
-            main.postDelayed({
-                if (!destroyed) {
-                    if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) startVoice()
-                    else setState("Microphone permission required")
-                }
-            }, 120L)
+        if (autoStartVoice && EZiKPrefs.autoVoice(context)) {
+            main.postDelayed { if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) startVoice() else setState("Microphone permission required") }, 120L)
         }
-
-        view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) = Unit
-            override fun onViewDetachedFromWindow(v: View) {
-                // A VoiceInteractionSession can temporarily detach/re-attach its content
-                // while the system changes focus, IME visibility, or the assist window.
-                // Do not mark the session dead or shut down the shared executor here.
-                // The owning Activity/Session performs final cleanup in onDestroy().
-            }
-        })
     }
 }

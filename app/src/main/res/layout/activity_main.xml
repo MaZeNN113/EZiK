@@ -1,216 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mainScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B0C10"
+    android:background="#090A0F"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="22dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="EZiK"
-            android:textColor="#FFFFFF"
-            android:textSize="36sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="Your Android assistant"
-            android:textColor="#9CA3AF"
-            android:textSize="15sp" />
+        android:padding="20dp">
 
         <LinearLayout
-            android:id="@+id/statusCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/session_card_background"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="SYSTEM STATUS"
-                android:textColor="#777985"
-                android:textSize="11sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/statusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/micStatusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:textColor="#A9A9B8"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/accessibilityStatusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="#A9A9B8"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/commandPanel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:background="@drawable/session_card_background"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="TRY A COMMAND"
-                android:textColor="#777985"
-                android:textSize="11sp"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/commandInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/input_background"
-                android:hint="@string/hint_command"
-                android:imeOptions="actionSend"
-                android:inputType="textCapSentences|textMultiLine"
-                android:maxLines="4"
-                android:minHeight="54dp"
-                android:padding="14dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#777985" />
-
-            <TextView
-                android:id="@+id/voiceStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="#A9A9B8"
-                android:textSize="12sp"
-                android:visibility="gone" />
-
+            android:gravity="center_vertical">
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/voiceButton"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="1"
-                    android:text="@string/btn_voice_start"
-                    android:backgroundTint="#27283A"
-                    android:textColor="#FFFFFF" />
-
-                <Button
-                    android:id="@+id/sendButton"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:text="@string/btn_send"
-                    android:backgroundTint="#6C5CE7"
-                    android:textColor="#FFFFFF" />
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="EZiK" android:textColor="#FFFFFF" android:textSize="34sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Android assistant · v1.1.0" android:textColor="#8F93A3" android:textSize="13sp" />
             </LinearLayout>
+            <TextView android:id="@+id/overallBadge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="READY" android:textColor="#55D187" android:textStyle="bold" android:textSize="11sp" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/shizukuStatusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textColor="#A9A9B8"
-            android:textSize="13sp" />
-
-        <Button
-            android:id="@+id/makeDefaultButton"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="14dp"
-            android:text="@string/btn_make_default"
-            android:backgroundTint="#6C5CE7"
-            android:textColor="#FFFFFF" />
-
-        <Button
-            android:id="@+id/openAssistantSettingsButton"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:text="@string/btn_open_assistant_settings"
-            android:backgroundTint="#20212A"
-            android:textColor="#FFFFFF" />
-
-        <Button
-            android:id="@+id/openAccessibilitySettingsButton"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:text="@string/btn_open_accessibility_settings"
-            android:backgroundTint="#20212A"
-            android:textColor="#FFFFFF" />
-
-        <Button
-            android:id="@+id/openAppSettingsButton"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:text="@string/btn_open_app_settings"
-            android:backgroundTint="#20212A"
-            android:textColor="#FFFFFF" />
-
-        <Button
-            android:id="@+id/requestShizukuButton"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:text="@string/btn_request_shizuku"
-            android:backgroundTint="#20212A"
-            android:textColor="#FFFFFF" />
-
-        <EditText
-            android:id="@+id/groqKeyInput"
+        <LinearLayout
+            android:id="@+id/navBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:background="@drawable/input_background"
-            android:hint="Groq API key (optional fallback)"
-            android:inputType="textPassword"
-            android:padding="14dp"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#777985" />
+            android:orientation="horizontal">
+            <Button android:id="@+id/navHome" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:text="Home" android:backgroundTint="#252738" android:textColor="#FFFFFF" />
+            <Button android:id="@+id/navCapabilities" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:layout_marginStart="6dp" android:text="Capabilities" android:backgroundTint="#15161E" android:textColor="#A9A9B8" />
+            <Button android:id="@+id/navSettings" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:layout_marginStart="6dp" android:text="Settings" android:backgroundTint="#15161E" android:textColor="#A9A9B8" />
+        </LinearLayout>
 
-        <Button
-            android:id="@+id/saveGroqKeyButton"
+        <LinearLayout
+            android:id="@+id/homeSection"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:text="Save Whisper key securely"
-            android:backgroundTint="#20212A"
-            android:textColor="#FFFFFF" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
+            <LinearLayout android:id="@+id/statusCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:background="@drawable/session_card_background" android:orientation="vertical" android:padding="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SYSTEM STATUS" android:textColor="#777985" android:textSize="11sp" android:textStyle="bold" />
+                <TextView android:id="@+id/statusText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" />
+                <TextView android:id="@+id/micStatusText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:textColor="#A9A9B8" android:textSize="13sp" />
+                <TextView android:id="@+id/accessibilityStatusText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="#A9A9B8" android:textSize="13sp" />
+                <TextView android:id="@+id/shizukuStatusText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="#A9A9B8" android:textSize="13sp" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/commandPanel" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:background="@drawable/session_card_background" android:orientation="vertical" android:padding="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="COMMAND CENTER" android:textColor="#777985" android:textSize="11sp" android:textStyle="bold" />
+                <EditText android:id="@+id/commandInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:background="@drawable/input_background" android:hint="Tell EZiK what to do…" android:imeOptions="actionSend" android:inputType="textCapSentences|textMultiLine" android:maxLines="4" android:minHeight="58dp" android:padding="14dp" android:textColor="#FFFFFF" android:textColorHint="#777985" />
+                <TextView android:id="@+id/voiceStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:textColor="#A9A9B8" android:textSize="12sp" android:visibility="gone" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                    <Button android:id="@+id/voiceButton" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="Speak" android:backgroundTint="#252738" android:textColor="#FFFFFF" />
+                    <Button android:id="@+id/sendButton" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="8dp" android:layout_weight="1" android:text="Run command" android:backgroundTint="#6C5CE7" android:textColor="#FFFFFF" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/capabilitiesSection" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="CAPABILITIES" android:textColor="#777985" android:textSize="11sp" android:textStyle="bold" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:background="@drawable/session_card_background" android:orientation="vertical" android:padding="16dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="System assistant" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Launch apps, web search, links and system-level entry points." android:textColor="#8F93A3" android:textSize="12sp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="In-app control" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Accessibility-driven search, tap, type, scroll and back actions. App-specific adapters come next." android:textColor="#8F93A3" android:textSize="12sp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="Privacy model" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Direct rules run locally. Cloud reasoning is optional and disabled unless you enable it and provide a key." android:textColor="#8F93A3" android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/settingsSection" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SETTINGS" android:textColor="#777985" android:textSize="11sp" android:textStyle="bold" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:background="@drawable/session_card_background" android:orientation="vertical" android:padding="14dp">
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/autoVoiceSwitch" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Start listening automatically" android:textColor="#FFFFFF" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Useful for the assistant gesture. Turn it off if you prefer typing first." android:textColor="#777985" android:textSize="11sp" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/appActionsSwitch" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="Allow in-app actions" android:textColor="#FFFFFF" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Lets EZiK inspect and operate visible app interfaces through Accessibility." android:textColor="#777985" android:textSize="11sp" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/confirmActionsSwitch" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="Confirm sensitive actions" android:textColor="#FFFFFF" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Reserved for destructive or privacy-sensitive actions as the action system grows." android:textColor="#777985" android:textSize="11sp" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/cloudReasoningSwitch" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="Use optional cloud reasoning" android:textColor="#FFFFFF" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Direct/offline parsing stays first. Groq is used only when local rules cannot understand a command." android:textColor="#777985" android:textSize="11sp" />
+            </LinearLayout>
+
+            <EditText android:id="@+id/groqKeyInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:background="@drawable/input_background" android:hint="Groq API key · optional" android:inputType="textPassword" android:padding="14dp" android:textColor="#FFFFFF" android:textColorHint="#777985" />
+            <Button android:id="@+id/saveGroqKeyButton" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="8dp" android:text="Save key securely" android:backgroundTint="#20212A" android:textColor="#FFFFFF" />
+
+            <Button android:id="@+id/makeDefaultButton" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="12dp" android:text="Make EZiK the default assistant" android:backgroundTint="#6C5CE7" android:textColor="#FFFFFF" />
+            <Button android:id="@+id/openAssistantSettingsButton" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="8dp" android:text="Assistant system settings" android:backgroundTint="#20212A" android:textColor="#FFFFFF" />
+            <Button android:id="@+id/openAccessibilitySettingsButton" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="8dp" android:text="Accessibility settings" android:backgroundTint="#20212A" android:textColor="#FFFFFF" />
+            <Button android:id="@+id/requestShizukuButton" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="8dp" android:text="Connect Shizuku" android:backgroundTint="#20212A" android:textColor="#FFFFFF" />
+            <Button android:id="@+id/openAppSettingsButton" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="8dp" android:text="Android app settings" android:backgroundTint="#20212A" android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:gravity="center" android:text="EZiK keeps local automation first. Network access is opt-in." android:textColor="#5F6270" android:textSize="11sp" />
     </LinearLayout>
 </ScrollView>

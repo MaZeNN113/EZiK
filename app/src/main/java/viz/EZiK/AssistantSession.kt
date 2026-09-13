@@ -63,7 +63,11 @@ class AssistantSession(context: Context) : VoiceInteractionSession(context) {
     }
 
     private fun installImeHandling(root: View) {
-        root.setOnApplyWindowInsetsListener { view, insets ->
+        // VoiceInteractionSession/Dialog windows do not always honor adjustResize on
+        // vendor Android builds. Move the actual window above the IME instead of only
+        // translating the content, which was the reason the keyboard could cover it.
+        val targetWindow = getWindow()?.window ?: return
+        targetWindow.decorView.setOnApplyWindowInsetsListener { _, insets ->
             val imeBottom = if (android.os.Build.VERSION.SDK_INT >= 30) {
                 insets.getInsets(android.view.WindowInsets.Type.ime()).bottom
             } else 0
@@ -71,10 +75,15 @@ class AssistantSession(context: Context) : VoiceInteractionSession(context) {
                 insets.getInsets(android.view.WindowInsets.Type.navigationBars()).bottom
             } else 0
             val offset = (imeBottom - navBottom).coerceAtLeast(0)
-            view.translationY = -offset.toFloat()
+            val lp = targetWindow.attributes
+            if (lp.gravity and Gravity.VERTICAL_GRAVITY_MASK == Gravity.BOTTOM) {
+                lp.y = offset
+                targetWindow.attributes = lp
+            }
+            root.translationY = 0f
             insets
         }
-        root.requestApplyInsets()
+        targetWindow.decorView.requestApplyInsets()
     }
 
     override fun onDestroy() {
