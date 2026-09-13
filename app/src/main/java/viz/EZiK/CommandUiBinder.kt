@@ -185,11 +185,10 @@ object CommandUiBinder {
         view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) = Unit
             override fun onViewDetachedFromWindow(v: View) {
-                destroyed = true
-                fallbackStop?.let(main::removeCallbacks)
-                liveSpeech.cancel()
-                recorder.cancel()
-                executor.shutdownNow()
+                // A VoiceInteractionSession can temporarily detach/re-attach its content
+                // while the system changes focus, IME visibility, or the assist window.
+                // Do not mark the session dead or shut down the shared executor here.
+                // The owning Activity/Session performs final cleanup in onDestroy().
             }
         })
     }
